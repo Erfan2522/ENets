@@ -27,7 +27,7 @@ The implementation must detect device capabilities and refuse unsupported operat
 
 ## Development
 
-The project currently contains a web UI prototype and a Go server scaffold. The server binds to `127.0.0.1:8080` by default for safety. Do not expose it to hotspot clients until authentication, authorization, CSRF protection, and network-interface restrictions are implemented and tested.
+The project currently contains a web UI prototype and a Go server with a read-only capability detection endpoint. The server binds to `127.0.0.1:8080` by default for safety. Do not expose it to hotspot clients until authentication, authorization, CSRF protection, and network-interface restrictions are implemented and tested. See [docs/CAPABILITY_DETECTION.md](docs/CAPABILITY_DETECTION.md).
 
 ### Run the dashboard prototype
 
