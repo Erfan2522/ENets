@@ -1,0 +1,7 @@
+/enetsd
+/server/enetsd
+*.log
+*.tmp
+.DS_Store
+.idea/
+.vscode/
