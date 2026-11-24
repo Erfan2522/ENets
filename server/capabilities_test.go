@@ -32,3 +32,18 @@ func TestCapabilitiesHandlerReturnsJSON(t *testing.T) {
 		t.Fatal("expected a JSON response body")
 	}
 }
+
+func TestCapabilityStatusesUseStableVocabulary(t *testing.T) {
+	report := buildCapabilityReport()
+	allowed := map[string]bool{
+		"supported": true,
+		"unsupported": true,
+		"unknown": true,
+		"error": true,
+	}
+	for name, item := range report.Capabilities {
+		if !allowed[item.Status] {
+			t.Errorf("capability %q has unsupported status %q", name, item.Status)
+		}
+	}
+}
