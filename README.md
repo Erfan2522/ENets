@@ -21,9 +21,12 @@ ENets will not manage firewall rules, block clients, or modify the system firewa
 - Magisk only in the first development phase.
 - Android 8.0+ is the intended minimum; compatibility is not yet verified.
 - ARM64 is the first planned target.
+- The goal is cross-device support through modular Android/vendor adapters, not a build limited to one phone.
 - Hotspot controls vary by Android release, vendor, chipset, and firmware. Root access alone does not guarantee that a setting can be changed.
 
-The implementation must detect device capabilities and refuse unsupported operations instead of blindly editing vendor configuration files.
+**Graceful compatibility rule:** if a device does not support a particular feature, ENets disables only that feature and explains why. The rest of the application and unrelated supported features continue working. Unknown capabilities are not treated as supported.
+
+The implementation must detect device capabilities and refuse unsupported operations instead of blindly editing vendor configuration files. See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
 
 ## Development
 
