@@ -9,4 +9,8 @@ ui_print "- Installing local dashboard preview"
 ui_print "- Android hotspot settings are NOT modified"
 ui_print "- Wi-Fi controls are not implemented in this build"
 ui_print "- The server listens on 127.0.0.1 only"
-ui_print "- ARM64 is required for the included server binary"
+ABI="$(getprop ro.product.cpu.abi)"
+if [ "$ABI" != "arm64-v8a" ]; then
+  abort "ENets preview currently requires ARM64 (arm64-v8a). Detected: ${ABI:-unknown}"
+fi
+ui_print "- ARM64 device detected"
