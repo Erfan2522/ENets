@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>ENets — Hotspot Control</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <a class="brand" href="#" aria-label="ENets home">
+        <span class="brand-mark">E</span>
+        <span><strong>ENets</strong><small>by Erfan</small></span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a class="active" href="#dashboard">Dashboard</a>
+        <a href="#hotspot">Hotspot Settings</a>
+        <a href="#clients">Connected Devices</a>
+        <a href="#system">System Status</a>
+        <a href="#about">About ENets</a>
+      </nav>
+      <div class="sidebar-foot">v0.1.0-alpha · Prototype</div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div><span class="eyebrow">NETWORK MANAGEMENT</span><h1>Dashboard</h1></div>
+        <span class="status"><i></i> Prototype mode</span>
+      </header>
+
+      <section class="notice" role="status">
+        <strong>Preview only</strong>
+        <span>This interface is not connected to Android hotspot controls yet. Changes are not applied to your device.</span>
+      </section>
+
+      <section id="dashboard" class="stats">
+        <article class="stat-card"><span>Hotspot</span><strong>Not connected</strong><small>Device integration pending</small></article>
+        <article class="stat-card"><span>Connected devices</span><strong>—</strong><small>Read-only discovery pending</small></article>
+        <article class="stat-card"><span>Wi-Fi band</span><strong>Not detected</strong><small>Capability detection pending</small></article>
+      </section>
+
+      <section id="hotspot" class="panel">
+        <div class="panel-heading"><div><span class="eyebrow">CONFIGURATION</span><h2>Hotspot Settings</h2></div><span class="tag">Not applied</span></div>
+        <form id="hotspot-form">
+          <div class="field">
+            <label for="ssid">Network name (SSID)</label>
+            <input id="ssid" name="ssid" maxlength="32" value="ENets_Hotspot" autocomplete="off">
+            <small>1–32 characters. Actual device rules may vary.</small>
+          </div>
+          <div class="field">
+            <label for="password">Hotspot password</label>
+            <input id="password" name="password" type="password" minlength="8" maxlength="63" placeholder="Enter a new password" autocomplete="new-password">
+            <small>For WPA2/WPA3 personal modes, use 8–63 characters. No password is pre-filled.</small>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="security">Security type</label>
+              <select id="security" name="security">
+                <option value="wpa2">WPA2-Personal</option>
+                <option value="wpa3">WPA3-Personal — if supported</option>
+                <option value="transition">WPA2/WPA3 — if supported</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="band">Wi-Fi band</label>
+              <select id="band" name="band">
+                <option value="auto">Auto (recommended)</option>
+                <option value="2.4">2.4 GHz — if supported</option>
+                <option value="5">5 GHz — if supported</option>
+                <option value="6">6 GHz — if supported</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="channel">Channel</label>
+              <select id="channel" name="channel"><option value="auto">Auto</option></select>
+              <small>Manual channels will appear only when safely detected.</small>
+            </div>
+            <div class="field">
+              <label for="max-clients">Maximum devices</label>
+              <select id="max-clients" name="max-clients">
+                <option>5</option><option selected>10</option><option>15</option><option>20</option>
+              </select>
+            </div>
+          </div>
+          <label class="check"><input type="checkbox" id="hidden"> <span>Hide network name (SSID)</span></label>
+          <button type="submit" disabled>Apply settings</button>
+          <p class="form-message" id="form-message">Controls are disabled until a compatible Android integration is implemented.</p>
+        </form>
+      </section>
+
+      <section id="clients" class="panel">
+        <div class="panel-heading"><div><span class="eyebrow">CLIENTS</span><h2>Connected Devices</h2></div><span class="tag">Read-only</span></div>
+        <div class="empty"><strong>No device data available</strong><span>Client discovery will be added after device and firmware testing.</span></div>
+      </section>
+
+      <section id="system" class="panel compact">
+        <div class="panel-heading"><div><span class="eyebrow">DIAGNOSTICS</span><h2>System Status</h2></div></div>
+        <p class="muted">Android capability detection, service health, and logs are not available in this prototype.</p>
+      </section>
+
+      <footer id="about">ENets by Erfan · Open source · GPL-3.0-only</footer>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
