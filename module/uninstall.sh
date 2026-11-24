@@ -8,7 +8,11 @@ if [ -f "$PID_FILE" ]; then
   PID="$(cat "$PID_FILE" 2>/dev/null)"
   case "$PID" in
     ''|*[!0-9]*) ;;
-    *) kill "$PID" 2>/dev/null ;;
+    *)
+      kill -TERM "$PID" 2>/dev/null
+      sleep 1
+      kill -0 "$PID" 2>/dev/null && kill -KILL "$PID" 2>/dev/null
+      ;;
   esac
   rm -f "$PID_FILE"
 fi
