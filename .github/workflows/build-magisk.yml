@@ -1,0 +1,58 @@
+name: Build Magisk preview
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/**"
+      - "web/**"
+      - "module/**"
+      - "go.mod"
+      - ".github/workflows/build-magisk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run tests
+        run: go test ./...
+      - name: Build Android-compatible ARM64 server
+        env:
+          GOOS: linux
+          GOARCH: arm64
+          CGO_ENABLED: "0"
+        run: go build -trimpath -ldflags="-s -w" -o enetsd ./server
+      - name: Assemble Magisk module ZIP
+        run: |
+          set -eu
+          STAGE="$RUNNER_TEMP/enets-module"
+          mkdir -p "$STAGE/system/bin" "$STAGE/web"
+          cp module/module.prop module/customize.sh module/service.sh "$STAGE/"
+          cp module/uninstall.sh "$STAGE/"
+          cp web/index.html web/style.css web/app.js "$STAGE/web/"
+          install -m 0755 enetsd "$STAGE/system/bin/enetsd"
+          printf '%s\n' \
+            'ENets v0.1.0-alpha preview package' \
+            'This build provides a read-only local dashboard only.' \
+            'It does not change hotspot settings, firewall rules, or routing.' \
+            'Requires Magisk and ARM64 Android.' \
+            > "$STAGE/INSTALL-NOTES.txt"
+          cd "$STAGE"
+          zip -qr "$GITHUB_WORKSPACE/ENets-v0.1.0-alpha-preview.zip" .
+          unzip -l "$GITHUB_WORKSPACE/ENets-v0.1.0-alpha-preview.zip"
+      - name: Upload installable preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENets-v0.1.0-alpha-preview
+          path: ENets-v0.1.0-alpha-preview.zip
+          if-no-files-found: error
+          retention-days: 30
