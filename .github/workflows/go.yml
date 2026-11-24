@@ -1,0 +1,30 @@
+name: Go checks
+
+on:
+  push:
+    paths:
+      - "server/**"
+      - "go.mod"
+      - ".github/workflows/go.yml"
+  pull_request:
+    paths:
+      - "server/**"
+      - "go.mod"
+      - ".github/workflows/go.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run tests
+        run: go test ./...
+      - name: Build server
+        run: go build ./server
