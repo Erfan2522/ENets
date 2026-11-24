@@ -10,6 +10,10 @@ form.addEventListener("submit", (event) => {
   message.textContent = "Not applied: Android hotspot configuration is not implemented in this alpha.";
 });
 
+function clearChildren(parent) {
+  while (parent.firstChild) parent.removeChild(parent.firstChild);
+}
+
 function addText(parent, tag, value, className) {
   const node = document.createElement(tag);
   node.textContent = value;
@@ -19,7 +23,7 @@ function addText(parent, tag, value, className) {
 }
 
 function displayCapabilities(report) {
-  results.replaceChildren();
+  clearChildren(results);
   const platform = report.platform || {};
   addText(results, "p", `${platform.manufacturer || "Unknown"} ${platform.model || ""} · Device: ${platform.device || "unknown"} · Android: ${platform.android_release || "unknown"} (API ${platform.android_api || "unknown"}) · ABI: ${platform.primary_abi || "unknown"}`, "muted");
   addText(results, "p", `Wi-Fi interfaces: ${(report.wifi_interfaces || []).join(", ") || "not detected"}`, "muted");
@@ -41,14 +45,14 @@ function displayCapabilities(report) {
 }
 
 async function loadCapabilities() {
-  results.replaceChildren();
+  clearChildren(results);
   addText(results, "p", "Checking device capabilities…", "muted");
   try {
     const response = await fetch("/api/v1/capabilities", { headers: { Accept: "application/json" }, cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     displayCapabilities(await response.json());
   } catch (error) {
-    results.replaceChildren();
+    clearChildren(results);
     addText(results, "p", `Detection unavailable: ${error.message}`, "muted");
     addText(results, "p", "Open this dashboard through the ENets local server to query the Android device.", "muted");
   }
