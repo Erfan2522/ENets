@@ -95,8 +95,8 @@ func detectHardwareBands() (map[string]capability, []string) {
 	}
 	for band := range seen {
 		result[band] = capability{
-			Status: "hardware_detected_needs_platform_validation",
-			Details: "The Wi-Fi driver reports frequencies in this band. This does not prove Android hotspot mode can use it.",
+			Status: "unknown",
+			Details: "The Wi-Fi driver reports frequencies in this band, but hotspot AP support has not been validated.",
 			Evidence: []string{"iw list frequency data"},
 		}
 		evidence = append(evidence, band)
@@ -118,14 +118,21 @@ func buildCapabilityReport() capabilityReport {
 
 	report := capabilityReport{
 		GeneratedAt: time.Now().UTC().Format(time.RFC3339),
-		Platform: map[string]string{"android_release": android, "android_api": api, "primary_abi": abi, "device": device},
+		Platform: map[string]string{
+			"android_release": android,
+			"android_api": api,
+			"primary_abi": abi,
+			"device": device,
+			"manufacturer": property("ro.product.manufacturer"),
+			"model": property("ro.product.model"),
+		},
 		Interfaces: interfaces,
 		Capabilities: map[string]capability{
-			"ssid_change": {Status: "not_integrated", Details: "No tested Android hotspot adapter is installed. No settings are changed."},
-			"password_change": {Status: "not_integrated", Details: "No tested Android hotspot adapter is installed. No settings are changed."},
-			"security_mode": {Status: "not_integrated", Details: "Hotspot security mode cannot be safely inferred from generic root shell access."},
-			"hotspot_enable_disable": {Status: "not_integrated", Details: "Hotspot control is not implemented."},
-			"connected_clients": {Status: "not_integrated", Details: "Read-only client discovery is not implemented yet."},
+			"ssid_change": {Status: "unknown", Details: "No tested Android hotspot adapter is integrated. This feature is not implemented."},
+			"password_change": {Status: "unknown", Details: "No tested Android hotspot adapter is integrated. This feature is not implemented."},
+			"security_mode": {Status: "unknown", Details: "Hotspot security mode cannot be safely inferred from generic root shell access."},
+			"hotspot_enable_disable": {Status: "unknown", Details: "Hotspot control is not implemented."},
+			"connected_clients": {Status: "unknown", Details: "Read-only client discovery is not implemented yet."},
 			"band_2_4_ghz": bands["2.4_ghz"],
 			"band_5_ghz": bands["5_ghz"],
 			"band_6_ghz": bands["6_ghz"],
