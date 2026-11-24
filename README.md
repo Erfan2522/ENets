@@ -2,7 +2,7 @@
 
 ENets is an open-source Magisk module project for managing an Android Wi-Fi hotspot through a lightweight local web dashboard.
 
-> **Status: early development (v0.1.0-alpha scaffold).** This repository is not an install-ready module yet. The current dashboard is a UI prototype; it does not change Android hotspot settings.
+> **Status: early development (v0.1.0-alpha).** An installable ARM64 read-only preview package is being built by GitHub Actions. The preview does not change Android hotspot settings and is not the completed hotspot manager.
 
 ## Planned features
 
@@ -20,31 +20,34 @@ ENets will not manage firewall rules, block clients, or modify the system firewa
 
 - Magisk only in the first development phase.
 - Android 8.0+ is the intended minimum; compatibility is not yet verified.
-- ARM64 is the first planned target.
+- ARM64 is the first planned target. The preview package requires `arm64-v8a`.
 - The goal is cross-device support through modular Android/vendor adapters, not a build limited to one phone.
 - Hotspot controls vary by Android release, vendor, chipset, and firmware. Root access alone does not guarantee that a setting can be changed.
 
 **Graceful compatibility rule:** if a device does not support a particular feature, ENets disables only that feature and explains why. The rest of the application and unrelated supported features continue working. Unknown capabilities are not treated as supported.
 
-The implementation must detect device capabilities and refuse unsupported operations instead of blindly editing vendor configuration files. See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
+The implementation must detect device capabilities and refuse unsupported operations instead of blindly editing vendor configuration files. See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) and [docs/ADAPTER_CONTRACT.md](docs/ADAPTER_CONTRACT.md).
+
+## Preview package
+
+The **Build Magisk preview** GitHub Actions workflow creates an installable ZIP artifact for ARM64. See [docs/INSTALLATION.md](docs/INSTALLATION.md) for instructions.
+
+The preview runs a local read-only dashboard at `http://127.0.0.1:8080`. It does not apply SSID, password, security, band, channel, or hotspot on/off changes. It does not discover connected clients yet. It binds to loopback only and must not be exposed to hotspot clients or the LAN.
 
 ## Development
 
-The project currently contains a web UI prototype and a Go server with a read-only capability detection endpoint. The server binds to `127.0.0.1:8080` by default for safety. Do not expose it to hotspot clients until authentication, authorization, CSRF protection, and network-interface restrictions are implemented and tested. See [docs/CAPABILITY_DETECTION.md](docs/CAPABILITY_DETECTION.md).
+The Go server exposes a read-only `GET /api/v1/capabilities` endpoint and a health endpoint. Capability values remain unknown until validated by a device/firmware adapter. The server uses loopback and rejects non-loopback peers and untrusted Host headers.
 
-### Run the dashboard prototype
-
-Open `web/index.html` in a browser. Applying settings is intentionally unavailable until a tested Android integration backend exists.
-
-### Build the Go server
+### Run tests and build locally
 
 Install Go, then run:
 
 ```sh
-go build -o enetsd ./server
+go test ./...
+go build -trimpath -o enetsd ./server
 ```
 
-The server expects the web assets in a `web/` directory relative to its working directory.
+The server expects the web assets in a `web/` directory relative to its working directory, or in the directory named by `ENETS_WEB_DIR`.
 
 ## Security principles
 
@@ -57,7 +60,7 @@ The server expects the web assets in a `web/` directory relative to its working 
 
 ## Roadmap
 
-See [docs/ROADMAP.md](docs/ROADMAP.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
+See [docs/ROADMAP.md](docs/ROADMAP.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md), and [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
 ## License
 
