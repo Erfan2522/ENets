@@ -7,13 +7,14 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
 func main() {
 	// ENets deliberately binds to loopback only. Do not make this configurable
 	// until authentication, CSRF protection, and interface restrictions exist.
-	addr := "127.0.0.1:8080"
+	const addr = "127.0.0.1:8080"
 
 	webDir := os.Getenv("ENETS_WEB_DIR")
 	if webDir == "" {
@@ -34,7 +35,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:              addr,
-		Handler:           securityHeaders(mux),
+		Handler:           securityHeaders(localHostOnly(mux)),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      15 * time.Second,
@@ -49,11 +50,36 @@ func main() {
 	}
 }
 
+func localHostOnly(next http.Handler) http.Handler {
+	allowedHosts := map[string]bool{
+		"127.0.0.1:8080": true,
+		"localhost:8080": true,
+		"[::1]:8080":     true,
+		"127.0.0.1":      true,
+		"localhost":      true,
+		"[::1]":          true,
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		host := strings.ToLower(r.Host)
+		if !allowedHosts[host] {
+			http.Error(w, "host not allowed", http.StatusForbidden)
+			return
+		}
+		remoteHost, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil || net.ParseIP(remoteHost) == nil || !net.ParseIP(remoteHost).IsLoopback() {
+			http.Error(w, "local access only", http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func securityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'")
 		w.Header().Set("Cache-Control", "no-store")
 		next.ServeHTTP(w, r)
 	})
@@ -63,10 +89,6 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", http.MethodGet)
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	if host, _, err := net.SplitHostPort(r.Host); err == nil && host != "127.0.0.1" && host != "localhost" {
-		http.Error(w, "host not allowed", http.StatusForbidden)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
