@@ -8,9 +8,8 @@ import (
 )
 
 func main() {
-	// Safe development default: loopback only. Do not change this to 0.0.0.0
-	// until authentication, CSRF protection, and hotspot-interface binding
-	// have been implemented and reviewed.
+	// Loopback-only until authentication, CSRF protection, and hotspot-interface
+	// binding are implemented and reviewed.
 	addr := os.Getenv("ENETS_LISTEN_ADDR")
 	if addr == "" {
 		addr = "127.0.0.1:8080"
@@ -26,6 +25,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v1/capabilities", capabilitiesHandler)
 	mux.Handle("/", http.FileServer(http.Dir(absWebDir)))
 
 	log.Printf("ENets development server listening on %s", addr)
