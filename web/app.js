@@ -28,7 +28,7 @@ function displayCapabilities(report) {
   list.className = "capability-list";
   for (const [name, item] of Object.entries(report.capabilities || {})) {
     const row = document.createElement("li");
-    addText(row, "strong", name.replaceAll("_", " "));
+    addText(row, "strong", name.replace(/_/g, " "));
     addText(row, "span", item.status || "unknown", "capability-status");
     addText(row, "small", item.details || "No details available.");
     list.appendChild(row);
