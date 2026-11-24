@@ -21,7 +21,7 @@ function addText(parent, tag, value, className) {
 function displayCapabilities(report) {
   results.replaceChildren();
   const platform = report.platform || {};
-  addText(results, "p", `Android: ${platform.android_release || "unknown"} (API ${platform.android_api || "unknown"}) · ABI: ${platform.primary_abi || "unknown"} · Device: ${platform.device || "unknown"}`, "muted");
+  addText(results, "p", `${platform.manufacturer || "Unknown"} ${platform.model || ""} · Device: ${platform.device || "unknown"} · Android: ${platform.android_release || "unknown"} (API ${platform.android_api || "unknown"}) · ABI: ${platform.primary_abi || "unknown"}`, "muted");
   addText(results, "p", `Wi-Fi interfaces: ${(report.wifi_interfaces || []).join(", ") || "not detected"}`, "muted");
 
   const list = document.createElement("ul");
