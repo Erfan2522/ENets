@@ -51,8 +51,9 @@ jobs:
         run: |
           set -eux
           python3 - <<'PY'
+          import os
           from pathlib import Path
-          root = Path("$RUNNER_TEMP/VirtualAP")
+          root = Path(os.environ["RUNNER_TEMP"]) / "VirtualAP"
           header = root / "src/include/virtualap.h"
           text = header.read_text()
           old = '#define VAP_BASE "/data/local/virtualap"'
