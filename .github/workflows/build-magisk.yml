@@ -47,6 +47,27 @@ jobs:
           git -C "$RUNNER_TEMP/VirtualAP" checkout "$VIRTUALAP_COMMIT"
           git -C "$RUNNER_TEMP/VirtualAP" submodule update --init --recursive
 
+      - name: Apply ENets-specific upstream adaptations
+        run: |
+          set -eux
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path("$RUNNER_TEMP/VirtualAP")
+          header = root / "src/include/virtualap.h"
+          text = header.read_text()
+          old = '#define VAP_BASE "/data/local/virtualap"'
+          new = '#define VAP_BASE "/data/local/enets"'
+          assert old in text, "VirtualAP data path changed; review before patching"
+          header.write_text(text.replace(old, new, 1))
+          ap = root / "src/mode/ap.c"
+          text = ap.read_text()
+          old = 'fputs("country_code=US\\\\nieee80211d=1\\\\n", f);'
+          if old not in text:
+              old = 'fputs("country_code=US\\nieee80211d=1\\n", f);'
+          assert old in text, "VirtualAP regulatory-domain block changed; review before patching"
+          ap.write_text(text.replace(old, '/* Keep the device/kernel regulatory domain; do not force a country. */', 1))
+          PY
+
       - name: Build static hostapd and dnsmasq for ARM64
         run: |
           set -eux
@@ -87,6 +108,7 @@ jobs:
           printf '%s\n' \
             "VirtualAP upstream commit: $VIRTUALAP_COMMIT" \
             "Source: https://github.com/ravindu644/VirtualAP/tree/$VIRTUALAP_COMMIT" \
+            "ENets patch: private data path /data/local/enets; removed hardcoded US regulatory domain." \
             "ENets bundles the upstream engine and its hostapd/dnsmasq dependencies." \
             "The current ENets dashboard is still read-only; hotspot controls are not exposed yet." \
             "ARM64 only. No 6 GHz support is claimed." \
