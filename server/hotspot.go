@@ -378,7 +378,8 @@ func hotspotStartHandler(w http.ResponseWriter, r *http.Request) {
 		if hadPreviousConfig {
 			restored = writeVirtualAPConfigBytes(previousConfig) == nil
 		} else {
-			restored = os.Remove(virtualAPConfig) == nil || errors.Is(os.ErrNotExist, os.ErrNotExist)
+			removeErr := os.Remove(virtualAPConfig)
+			restored = removeErr == nil || errors.Is(removeErr, os.ErrNotExist)
 		}
 		if restored && statusErr == nil && previousStatus.Running && hadPreviousConfig {
 			_, _ = runVirtualAP(60*time.Second, "start")
