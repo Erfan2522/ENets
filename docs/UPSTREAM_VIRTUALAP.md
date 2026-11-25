@@ -34,7 +34,7 @@ The backend's minimum routing/NAT behavior is required for internet sharing. ENe
 5. Keep 6 GHz disabled/unsupported until the engine and hostapd configuration are explicitly extended and validated. The inspected upstream CLI currently exposes only 2.4 and 5 GHz.
 6. Detect the required interface/driver/hostapd capabilities before attempting a start. Do not infer AP support from `iw list` alone.
 7. Make all configuration writes atomic and permission-restricted. Never log the hotspot password.
-8. Keep the ENets dashboard bound to loopback. Add authenticated, CSRF-protected write endpoints before any state-changing dashboard action.
+8. Keep the ENets dashboard bound to loopback. State-changing requests require same-origin checks; do not enable remote exposure without authentication and full CSRF protection.
 9. Validate start, stop, status, reboot recovery, failure cleanup, and internet sharing on each device/firmware adapter. A successful process exit alone is not proof that clients can connect or reach the internet.
 
 ## Initial scope
