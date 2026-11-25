@@ -83,7 +83,7 @@ chmod 0600 "$PID_FILE" "$LOG_FILE" 2>/dev/null
 
 sleep 2
 if kill -0 "$PID" 2>/dev/null && is_enets_process "$PID"; then
-  log "Read-only dashboard started at http://127.0.0.1:8080"
+  log "Local dashboard started at http://127.0.0.1:8080"
 else
   rm -f "$PID_FILE"
   log "Server failed to start. Check enets.log."
