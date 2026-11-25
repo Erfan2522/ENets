@@ -8,11 +8,9 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"sort"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -26,7 +24,6 @@ const (
 )
 
 var hotspotOperationMu sync.Mutex
-var interfaceNamePattern = regexp.MustCompile(`^[A-Za-z0-9_.-]{1,15}$`)
 
 type hotspotStartRequest struct {
 	SSID     string `json:"ssid"`
