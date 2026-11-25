@@ -3,4 +3,4 @@ name=ENets by Erfan
 version=v0.2.0-alpha
 versionCode=2
 author=Erfan2522
-description=ENets dashboard with isolated VirtualAP backend preview; hotspot controls not yet exposed.
+description=ENets local hotspot dashboard with experimental VirtualAP controls.
