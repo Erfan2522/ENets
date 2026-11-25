@@ -62,21 +62,23 @@ jobs:
           header = root / "src/include/virtualap.h"
           text = header.read_text()
           old = '#define VAP_BASE "/data/local/virtualap"'
-          new = '#define VAP_BASE "/data/local/enets"'
           assert old in text, "VirtualAP data path changed; review before patching"
-          header.write_text(text.replace(old, new, 1))
+          header.write_text(text.replace(old, '#define VAP_BASE "/data/local/enets"', 1))
+
           ap = root / "src/mode/ap.c"
-          text = ap.read_text()
-          old = r'fputs("country_code=US\\nieee80211d=1\\n", f);'
-          assert old in text, "VirtualAP regulatory-domain block changed; review before patching"
-          ap.write_text(text.replace(old, '/* Keep the device/kernel regulatory domain; do not force a country. */', 1))
+          lines = ap.read_text().splitlines(keepends=True)
+          matches = [i for i, line in enumerate(lines) if 'fputs("country_code=US' in line]
+          assert len(matches) == 1, "Expected exactly one hardcoded regulatory-domain line"
+          lines[matches[0]] = '  /* Keep the device/kernel regulatory domain; do not force a country. */\\n'
+          ap.write_text("".join(lines))
+
           test = root / "tests/check_services.c"
-          text = test.read_text()
-          old = r'''CHECK(strstr(c, "ht_capab=[HT40-]\\nvht_oper_chwidth=0\\ncountry_code=US\\n"));'''
-          new = r'''CHECK(strstr(c, "ht_capab=[HT40-]\\nvht_oper_chwidth=0\\n") &&
-                !strstr(c, "country_code=") && !strstr(c, "ieee80211d="));'''
-          assert old in text, "VirtualAP regulatory-domain test changed; review before patching"
-          test.write_text(text.replace(old, new, 1))
+          lines = test.read_text().splitlines(keepends=True)
+          matches = [i for i, line in enumerate(lines) if 'country_code=US' in line]
+          assert len(matches) == 1, "Expected exactly one country-code assertion"
+          lines[matches[0]] = '  CHECK(strstr(c, "ht_capab=[HT40-]\\\\nvht_oper_chwidth=0\\\\n") &&\\n'
+          lines.insert(matches[0] + 1, '        !strstr(c, "country_code=") && !strstr(c, "ieee80211d="));\\n')
+          test.write_text("".join(lines))
           PY
 
       - name: Build static hostapd and dnsmasq for ARMv7
