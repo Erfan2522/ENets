@@ -13,17 +13,25 @@ import (
 )
 
 type capability struct {
-	Status  string   `json:"status"`
-	Details string   `json:"details"`
+	Status   string   `json:"status"`
+	Details  string   `json:"details"`
 	Evidence []string `json:"evidence,omitempty"`
 }
 
 type capabilityReport struct {
-	GeneratedAt string                `json:"generated_at"`
-	Platform    map[string]string     `json:"platform"`
-	Interfaces  []string              `json:"wifi_interfaces"`
+	GeneratedAt  string                `json:"generated_at"`
+	Platform     map[string]string     `json:"platform"`
+	Interfaces   []string              `json:"wifi_interfaces"`
 	Capabilities map[string]capability `json:"capabilities"`
-	Warnings    []string               `json:"warnings"`
+	Warnings     []string              `json:"warnings"`
+}
+
+type androidShellEvidence struct {
+	WiFiHelpAvailable       bool
+	SoftAPStartListed       bool
+	SoftAPStopListed        bool
+	TetheringHelpAvailable  bool
+	ConnectivityHelpPresent bool
 }
 
 func commandOutput(timeout time.Duration, name string, args ...string) string {
@@ -36,8 +44,31 @@ func commandOutput(timeout time.Duration, name string, args ...string) string {
 	return strings.TrimSpace(string(out))
 }
 
+func commandOutputCombined(timeout time.Duration, name string, args ...string) string {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, name, args...).CombinedOutput()
+	if err != nil && len(out) == 0 {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
+
 func property(name string) string {
 	return commandOutput(2*time.Second, "getprop", name)
+}
+
+func detectAndroidShellEvidence() androidShellEvidence {
+	var result androidShellEvidence
+	if commandOutputCombined(3*time.Second, "cmd", "wifi", "help") != "" {
+		result.WiFiHelpAvailable = true
+		help := strings.ToLower(commandOutputCombined(3*time.Second, "cmd", "wifi", "help"))
+		result.SoftAPStartListed = strings.Contains(help, "start-softap")
+		result.SoftAPStopListed = strings.Contains(help, "stop-softap")
+	}
+	result.TetheringHelpAvailable = commandOutputCombined(3*time.Second, "cmd", "tethering", "help") != ""
+	result.ConnectivityHelpPresent = commandOutputCombined(3*time.Second, "cmd", "connectivity", "help") != ""
+	return result
 }
 
 func detectWiFiInterfaces() []string {
@@ -107,6 +138,7 @@ func detectHardwareBands() (map[string]capability, []string) {
 func buildCapabilityReport() capabilityReport {
 	interfaces := detectWiFiInterfaces()
 	bands, _ := detectHardwareBands()
+	shell := detectAndroidShellEvidence()
 	api := property("ro.build.version.sdk")
 	android := property("ro.build.version.release")
 	abi := property("ro.product.cpu.abi")
@@ -115,6 +147,23 @@ func buildCapabilityReport() capabilityReport {
 	if android == "" { android = "unknown" }
 	if abi == "" { abi = "unknown" }
 	if device == "" { device = "unknown" }
+
+	wifiShell := "not_detected"
+	if shell.WiFiHelpAvailable { wifiShell = "available" }
+	tetherShell := "not_detected"
+	if shell.TetheringHelpAvailable { tetherShell = "available" }
+	connectivityShell := "not_detected"
+	if shell.ConnectivityHelpPresent { connectivityShell = "available" }
+
+	softAPDetails := "The Android Wi-Fi shell interface was not detected."
+	softAPEvidence := []string{}
+	if shell.SoftAPStartListed {
+		softAPDetails = "The device lists cmd wifi start-softap. This proves command discovery only, not permission, successful AP startup, or internet tethering."
+		softAPEvidence = append(softAPEvidence, "cmd wifi help: start-softap")
+	}
+	if shell.SoftAPStopListed {
+		softAPEvidence = append(softAPEvidence, "cmd wifi help: stop-softap")
+	}
 
 	report := capabilityReport{
 		GeneratedAt: time.Now().UTC().Format(time.RFC3339),
@@ -125,13 +174,18 @@ func buildCapabilityReport() capabilityReport {
 			"device": device,
 			"manufacturer": property("ro.product.manufacturer"),
 			"model": property("ro.product.model"),
+			"wifi_shell": wifiShell,
+			"tethering_shell": tetherShell,
+			"connectivity_shell": connectivityShell,
 		},
 		Interfaces: interfaces,
 		Capabilities: map[string]capability{
-			"ssid_change": {Status: "unknown", Details: "No tested Android hotspot adapter is integrated. This feature is not implemented."},
-			"password_change": {Status: "unknown", Details: "No tested Android hotspot adapter is integrated. This feature is not implemented."},
+			"ssid_change": {Status: "unknown", Details: "No device-specific adapter has safely read and applied an SSID yet."},
+			"password_change": {Status: "unknown", Details: "No device-specific adapter has safely read and applied a hotspot passphrase yet."},
 			"security_mode": {Status: "unknown", Details: "Hotspot security mode cannot be safely inferred from generic root shell access."},
-			"hotspot_enable_disable": {Status: "unknown", Details: "Hotspot control is not implemented."},
+			"hotspot_enable_disable": {Status: "unknown", Details: "A listed Soft AP shell command does not prove a working tethered hotspot. Runtime state and internet tethering must be validated separately."},
+			"softap_shell_command": {Status: "unknown", Details: softAPDetails, Evidence: softAPEvidence},
+			"internet_tethering": {Status: "unknown", Details: "No safe, validated Android tethering adapter is integrated. Soft AP startup is not equivalent to internet sharing."},
 			"connected_clients": {Status: "unknown", Details: "Read-only client discovery is not implemented yet."},
 			"band_2_4_ghz": bands["2.4_ghz"],
 			"band_5_ghz": bands["5_ghz"],
@@ -139,7 +193,9 @@ func buildCapabilityReport() capabilityReport {
 		},
 		Warnings: []string{
 			"This endpoint performs read-only detection. It does not change hotspot settings.",
+			"Shell help output confirms only that a command is listed; it does not prove permissions or successful operation.",
 			"Reported radio frequencies are hardware/driver clues, not proof of hotspot AP support.",
+			"Soft AP startup and internet tethering are separate capabilities and must be validated independently.",
 			"Root access alone does not guarantee that Android or vendor hotspot settings can be changed.",
 		},
 	}
