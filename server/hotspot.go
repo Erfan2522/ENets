@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"sort"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -46,7 +47,6 @@ type hotspotStatus struct {
 	Channel          string            `json:"channel,omitempty"`
 	Security         string            `json:"security,omitempty"`
 	Clients          int               `json:"clients"`
-	Details          map[string]string `json:"details,omitempty"`
 }
 
 type hotspotClient struct {
@@ -104,7 +104,6 @@ func readHotspotStatus() (hotspotStatus, error) {
 	result.Band = values["band"]
 	result.Channel = values["channel"]
 	result.Security = values["security"]
-	result.Details = values
 	if n, err := strconv.Atoi(values["clients"]); err == nil && n >= 0 {
 		result.Clients = n
 	}
@@ -121,6 +120,21 @@ func validTextField(value string, maxBytes int) bool {
 		}
 	}
 	return true
+}
+
+func defaultPHYInterface() (string, error) {
+	interfaces := detectWiFiInterfaces()
+	sort.Strings(interfaces)
+	for _, name := range interfaces {
+		if name == "wlan0" { return name, nil }
+	}
+	for _, name := range interfaces {
+		if strings.HasPrefix(name, "wlan") { return name, nil }
+	}
+	for _, name := range interfaces {
+		if !strings.HasPrefix(name, "p2p") && !strings.HasPrefix(name, "ap") { return name, nil }
+	}
+	return "", errors.New("no physical Wi-Fi interface was detected")
 }
 
 func validateHotspotRequest(input hotspotStartRequest) (map[string]string, error) {
@@ -336,6 +350,12 @@ func hotspotStartHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	phy, err := defaultPHYInterface()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusServiceUnavailable)
+		return
+	}
+	values["PHY_IFACE"] = phy
 
 	hotspotOperationMu.Lock()
 	defer hotspotOperationMu.Unlock()
