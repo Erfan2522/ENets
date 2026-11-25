@@ -44,7 +44,7 @@ install_backend_payload() {
 }
 
 ABI="$(getprop ro.product.cpu.abi)"
-case "$ABI" in arm64-v8a) ;; *) log "Unsupported ABI: ${ABI:-unknown}; service not started."; exit 0 ;; esac
+case "$ABI" in armeabi-v7a) ;; *) log "Unsupported ABI: ${ABI:-unknown}; ARMv7 service not started."; exit 0 ;; esac
 [ -x "$ENETS_BIN" ] || { log "Server binary missing."; exit 0; }
 [ -d "$WEB_DIR" ] || { log "Dashboard assets missing."; exit 0; }
 install_backend_payload || { log "Backend payload setup failed."; exit 0; }
