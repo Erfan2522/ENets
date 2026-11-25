@@ -69,6 +69,13 @@ jobs:
           old = r'fputs("country_code=US\nieee80211d=1\n", f);'
           assert old in text, "VirtualAP regulatory-domain block changed; review before patching"
           ap.write_text(text.replace(old, '/* Keep the device/kernel regulatory domain; do not force a country. */', 1))
+          test = root / "tests/check_services.c"
+          text = test.read_text()
+          old = r'''CHECK(strstr(c, "ht_capab=[HT40-]\nvht_oper_chwidth=0\ncountry_code=US\n"));'''
+          new = r'''CHECK(strstr(c, "ht_capab=[HT40-]\nvht_oper_chwidth=0\n") &&
+                !strstr(c, "country_code=") && !strstr(c, "ieee80211d="));'''
+          assert old in text, "VirtualAP regulatory-domain test changed; review before patching"
+          test.write_text(text.replace(old, new, 1))
           PY
 
       - name: Build static hostapd and dnsmasq for ARM64
