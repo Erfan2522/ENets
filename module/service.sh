@@ -42,8 +42,8 @@ install_backend_payload() {
   return 0
 }
 
-# The dashboard server remains loopback-only. No hotspot action is exposed by
-# this preview yet; the bundled engine is staged for the next integration step.
+# The dashboard server remains loopback-only. Its same-origin API can control
+# the staged engine; remote/LAN access is intentionally not supported.
 ABI="$(getprop ro.product.cpu.abi)"
 case "$ABI" in
   arm64-v8a) ;;
