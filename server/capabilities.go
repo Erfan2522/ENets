@@ -58,13 +58,18 @@ func property(name string) string {
 	return commandOutput(2*time.Second, "getprop", name)
 }
 
+func containsHelpCommand(help, command string) bool {
+	pattern := regexp.MustCompile(`(?m)(^|\\s)` + regexp.QuoteMeta(command) + `(\\s|$)`)
+	return pattern.MatchString(strings.ToLower(help))
+}
+
 func detectAndroidShellEvidence() androidShellEvidence {
 	var result androidShellEvidence
-	if commandOutputCombined(3*time.Second, "cmd", "wifi", "help") != "" {
+	wifiHelp := commandOutputCombined(3*time.Second, "cmd", "wifi", "help")
+	if wifiHelp != "" {
 		result.WiFiHelpAvailable = true
-		help := strings.ToLower(commandOutputCombined(3*time.Second, "cmd", "wifi", "help"))
-		result.SoftAPStartListed = strings.Contains(help, "start-softap")
-		result.SoftAPStopListed = strings.Contains(help, "stop-softap")
+		result.SoftAPStartListed = containsHelpCommand(wifiHelp, "start-softap")
+		result.SoftAPStopListed = containsHelpCommand(wifiHelp, "stop-softap")
 	}
 	result.TetheringHelpAvailable = commandOutputCombined(3*time.Second, "cmd", "tethering", "help") != ""
 	result.ConnectivityHelpPresent = commandOutputCombined(3*time.Second, "cmd", "connectivity", "help") != ""
