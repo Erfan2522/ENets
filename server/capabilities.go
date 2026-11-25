@@ -170,6 +170,11 @@ func buildCapabilityReport() capabilityReport {
 		softAPEvidence = append(softAPEvidence, "cmd wifi help: stop-softap")
 	}
 
+	backendCapability := capability{Status: "unsupported", Details: "The VirtualAP engine payload is not installed."}
+	if virtualAPAvailable() {
+		backendCapability = capability{Status: "unknown", Details: "The pinned VirtualAP engine is installed. Device-specific hotspot startup and internet sharing have not yet been verified."}
+	}
+
 	report := capabilityReport{
 		GeneratedAt: time.Now().UTC().Format(time.RFC3339),
 		Platform: map[string]string{
@@ -185,10 +190,11 @@ func buildCapabilityReport() capabilityReport {
 		},
 		Interfaces: interfaces,
 		Capabilities: map[string]capability{
+			"virtualap_backend": backendCapability,
 			"ssid_change": {Status: "unknown", Details: "No device-specific adapter has safely read and applied an SSID yet."},
 			"password_change": {Status: "unknown", Details: "No device-specific adapter has safely read and applied a hotspot passphrase yet."},
 			"security_mode": {Status: "unknown", Details: "Hotspot security mode cannot be safely inferred from generic root shell access."},
-			"hotspot_enable_disable": {Status: "unknown", Details: "A listed Soft AP shell command does not prove a working tethered hotspot. Runtime state and internet tethering must be validated separately."},
+			"hotspot_enable_disable": {Status: "unknown", Details: "The backend can attempt start/stop, but a successful AP and client connectivity have not yet been validated on this device."},
 			"softap_shell_command": {Status: "unknown", Details: softAPDetails, Evidence: softAPEvidence},
 			"internet_tethering": {Status: "unknown", Details: "No safe, validated Android tethering adapter is integrated. Soft AP startup is not equivalent to internet sharing."},
 			"connected_clients": {Status: "unknown", Details: "Read-only client discovery is not implemented yet."},
@@ -198,6 +204,7 @@ func buildCapabilityReport() capabilityReport {
 		},
 		Warnings: []string{
 			"This endpoint performs read-only detection. It does not change hotspot settings.",
+			"The bundled VirtualAP engine is an experimental backend; its presence is not proof of device compatibility.",
 			"Shell help output confirms only that a command is listed; it does not prove permissions or successful operation.",
 			"Reported radio frequencies are hardware/driver clues, not proof of hotspot AP support.",
 			"Soft AP startup and internet tethering are separate capabilities and must be validated independently.",
