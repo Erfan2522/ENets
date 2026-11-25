@@ -1,0 +1,150 @@
+name: Build ENets ARM32 (ARMv7) Magisk preview
+
+on:
+  push:
+    branches: ["integration/arm32-j7prime"]
+    paths:
+      - "server/**"
+      - "web/**"
+      - "module/**"
+      - "go.mod"
+      - "docs/UPSTREAM_VIRTUALAP.md"
+      - ".github/workflows/build-magisk-arm32.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: enets-arm32-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VIRTUALAP_COMMIT: 19718afbf5df48f12d82a8a30bf205cf7bfa6c6e
+  TOOLCHAINS_URL: https://github.com/ravindu644/Droidspaces-OSS/releases/download/compilers-25843896720
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Run ENets tests
+        run: go test ./...
+
+      - name: Build Android-compatible ARMv7 ENets server
+        env:
+          GOOS: linux
+          GOARCH: arm
+          GOARM: "7"
+          CGO_ENABLED: "0"
+        run: go build -trimpath -ldflags="-s -w" -o enetsd ./server
+
+      - name: Fetch pinned VirtualAP source and submodules
+        run: |
+          set -eux
+          git clone https://github.com/ravindu644/VirtualAP.git "$RUNNER_TEMP/VirtualAP"
+          git -C "$RUNNER_TEMP/VirtualAP" checkout "$VIRTUALAP_COMMIT"
+          git -C "$RUNNER_TEMP/VirtualAP" submodule update --init --recursive
+
+      - name: Apply ENets-specific upstream adaptations
+        run: |
+          set -eux
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "VirtualAP"
+          header = root / "src/include/virtualap.h"
+          text = header.read_text()
+          old = '#define VAP_BASE "/data/local/virtualap"'
+          new = '#define VAP_BASE "/data/local/enets"'
+          assert old in text, "VirtualAP data path changed; review before patching"
+          header.write_text(text.replace(old, new, 1))
+          ap = root / "src/mode/ap.c"
+          text = ap.read_text()
+          old = r'fputs("country_code=US\\nieee80211d=1\\n", f);'
+          assert old in text, "VirtualAP regulatory-domain block changed; review before patching"
+          ap.write_text(text.replace(old, '/* Keep the device/kernel regulatory domain; do not force a country. */', 1))
+          test = root / "tests/check_services.c"
+          text = test.read_text()
+          old = r'''CHECK(strstr(c, "ht_capab=[HT40-]\\nvht_oper_chwidth=0\\ncountry_code=US\\n"));'''
+          new = r'''CHECK(strstr(c, "ht_capab=[HT40-]\\nvht_oper_chwidth=0\\n") &&
+                !strstr(c, "country_code=") && !strstr(c, "ieee80211d="));'''
+          assert old in text, "VirtualAP regulatory-domain test changed; review before patching"
+          test.write_text(text.replace(old, new, 1))
+          PY
+
+      - name: Build static hostapd and dnsmasq for ARMv7
+        run: bash "$RUNNER_TEMP/VirtualAP/scripts/build-static.sh" armhf
+
+      - name: Install pinned ARMv7 musl toolchain
+        run: |
+          set -eux
+          mkdir -p "$HOME/toolchains"
+          cd "$HOME/toolchains"
+          curl --fail --location --retry 3 "$TOOLCHAINS_URL/arm-linux-musleabihf-cross.tar.zst" -o arm-linux-musleabihf-cross.tar.zst
+          echo "00d089b7917d75492b23e684774e7d56709c93a9fcbfdfdf9b64ef9eda6c9f9b  arm-linux-musleabihf-cross.tar.zst" | sha256sum -c -
+          tar --zstd -xf arm-linux-musleabihf-cross.tar.zst
+          rm arm-linux-musleabihf-cross.tar.zst
+
+      - name: Build VirtualAP ARMv7 engine
+        working-directory: ${{ runner.temp }}/VirtualAP
+        run: |
+          set -eux
+          make check
+          make armhf WERROR=1
+
+      - name: Assemble ARM32 Magisk module and corresponding source
+        run: |
+          set -eux
+          UPSTREAM="$RUNNER_TEMP/VirtualAP"
+          STAGE="$RUNNER_TEMP/enets-module"
+          mkdir -p "$STAGE/system/bin" "$STAGE/web" "$STAGE/payload/bin"
+
+          cp module/module.prop module/customize.sh module/service.sh module/uninstall.sh "$STAGE/"
+          cp web/index.html web/style.css web/app.js "$STAGE/web/"
+          install -m 0755 enetsd "$STAGE/system/bin/enetsd"
+          install -m 0755 "$UPSTREAM/backend/armhf/virtualap" "$STAGE/payload/bin/virtualap"
+          install -m 0755 "$UPSTREAM/backend/armhf/hostapd" "$STAGE/payload/bin/hostapd"
+          install -m 0755 "$UPSTREAM/backend/armhf/dnsmasq" "$STAGE/payload/bin/dnsmasq"
+          (cd "$STAGE/payload/bin" && sha256sum virtualap hostapd dnsmasq > PAYLOAD_SHA256SUMS)
+
+          printf '%s\\n' \\
+            "VirtualAP upstream commit: $VIRTUALAP_COMMIT" \\
+            "Source: https://github.com/ravindu644/VirtualAP/tree/$VIRTUALAP_COMMIT" \\
+            "ENets patch: private data path /data/local/enets; removed hardcoded US regulatory domain." \\
+            "ENets bundles the upstream engine and its hostapd/dnsmasq dependencies." \\
+            "ARM32 ARMv7 hard-float (armeabi-v7a compatible); no ARM64 binaries are included." \\
+            "WPA3 and device-specific SoftAP behavior remain unverified." \\
+            > "$STAGE/UPSTREAM-SOURCE.txt"
+
+          tar --exclude=.git --exclude="*/.git" -czf "$RUNNER_TEMP/ENets-VirtualAP-armhf-corresponding-source.tar.gz" \\
+            -C "$UPSTREAM" LICENSE Makefile src scripts externals .gitmodules
+
+          printf '%s\\n' \\
+            'ENets ARM32 ARMv7 integration preview' \\
+            'Built for 32-bit ARMv7 Android userspace (armeabi-v7a compatible).' \\
+            'Includes the pinned VirtualAP engine, hostapd, and dnsmasq ARMv7 payload.' \\
+            'Device-specific hotspot compatibility must be validated on the target phone.' \\
+            > "$STAGE/INSTALL-NOTES.txt"
+
+          chmod 0755 "$STAGE/service.sh" "$STAGE/uninstall.sh" "$STAGE/customize.sh"
+          chmod 0755 "$STAGE/payload/bin/virtualap" "$STAGE/payload/bin/hostapd" "$STAGE/payload/bin/dnsmasq"
+          cd "$STAGE"
+          zip -qr "$GITHUB_WORKSPACE/ENets-ARM32-ARMv7-preview.zip" .
+          unzip -l "$GITHUB_WORKSPACE/ENets-ARM32-ARMv7-preview.zip"
+
+      - name: Upload ARM32 installable preview and source
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENets-ARM32-ARMv7-preview
+          path: |
+            ENets-ARM32-ARMv7-preview.zip
+            ${{ runner.temp }}/ENets-VirtualAP-armhf-corresponding-source.tar.gz
+          if-no-files-found: error
+          retention-days: 30
