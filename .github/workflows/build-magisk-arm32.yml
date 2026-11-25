@@ -128,12 +128,12 @@ jobs:
           tar --exclude=.git --exclude="*/.git" -czf "$RUNNER_TEMP/ENets-VirtualAP-armhf-corresponding-source.tar.gz" \\
             -C "$UPSTREAM" LICENSE Makefile src scripts externals .gitmodules
 
-          cat > "$STAGE/INSTALL-NOTES.txt" <<'EOF'
-ENets ARM32 ARMv7 integration preview
-Built for 32-bit ARMv7 Android userspace (armeabi-v7a compatible).
-Includes the pinned VirtualAP engine, hostapd, and dnsmasq ARMv7 payload.
-Device-specific hotspot compatibility must be validated on the target phone.
-EOF
+          {
+            echo "ENets ARM32 ARMv7 integration preview"
+            echo "Built for 32-bit ARMv7 Android userspace (armeabi-v7a compatible)."
+            echo "Includes the pinned VirtualAP engine, hostapd, and dnsmasq ARMv7 payload."
+            echo "Device-specific hotspot compatibility must be validated on the target phone."
+          } > "$STAGE/INSTALL-NOTES.txt"
 
           chmod 0755 "$STAGE/service.sh" "$STAGE/uninstall.sh" "$STAGE/customize.sh"
           chmod 0755 "$STAGE/payload/bin/virtualap" "$STAGE/payload/bin/hostapd" "$STAGE/payload/bin/dnsmasq"
