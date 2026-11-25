@@ -62,9 +62,7 @@ jobs:
           header.write_text(text.replace(old, new, 1))
           ap = root / "src/mode/ap.c"
           text = ap.read_text()
-          old = 'fputs("country_code=US\\\\nieee80211d=1\\\\n", f);'
-          if old not in text:
-              old = 'fputs("country_code=US\\nieee80211d=1\\n", f);'
+          old = r'fputs("country_code=US\\nieee80211d=1\\n", f);'
           assert old in text, "VirtualAP regulatory-domain block changed; review before patching"
           ap.write_text(text.replace(old, '/* Keep the device/kernel regulatory domain; do not force a country. */', 1))
           PY
