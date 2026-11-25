@@ -35,6 +35,10 @@ install_backend_payload() {
 
   mkdir -p "$ENETS_DATA/bin" "$ENETS_DATA/logs" "$ENETS_DATA/run" || return 1
   chmod 0700 "$ENETS_DATA" "$ENETS_DATA/logs" "$ENETS_DATA/run" || return 1
+  # Avoid replacing an engine executable while it is still running.
+  if [ -x "$ENETS_DATA/bin/virtualap" ]; then
+    "$ENETS_DATA/bin/virtualap" stop >/dev/null 2>&1
+  fi
   for name in virtualap hostapd dnsmasq; do
     cp -f "$PAYLOAD_DIR/$name" "$ENETS_DATA/bin/$name" || return 1
     chmod 0755 "$ENETS_DATA/bin/$name" || return 1
