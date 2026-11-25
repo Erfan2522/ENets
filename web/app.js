@@ -8,6 +8,7 @@ const startButton = document.getElementById("start-button");
 const stopButton = document.getElementById("stop-button");
 const securityInput = document.getElementById("security");
 let backendAvailable = false;
+let operationBusy = false;
 
 function addText(parent, tag, value, className) {
   const node = document.createElement(tag);
@@ -94,6 +95,7 @@ function displayCapabilities(report) {
 }
 
 async function refreshStatus() {
+  if (operationBusy) return;
   try {
     const status = await requestJSON("/api/v1/hotspot/status");
     updateStatus(status);
@@ -168,7 +170,9 @@ form.addEventListener("submit", async (event) => {
     width: document.getElementById("width").value,
     hidden: document.getElementById("hidden").checked
   };
+  operationBusy = true;
   startButton.disabled = true;
+  stopButton.disabled = true;
   setMessage("Applying settings and starting hotspot…");
   try {
     const status = await requestJSON("/api/v1/hotspot/start", {
@@ -183,13 +187,17 @@ form.addEventListener("submit", async (event) => {
   } catch (error) {
     setMessage(error.message, true);
   } finally {
+    operationBusy = false;
     startButton.disabled = !backendAvailable;
+    await refreshStatus();
   }
 });
 
 stopButton.addEventListener("click", async () => {
   if (!backendAvailable) return;
+  operationBusy = true;
   stopButton.disabled = true;
+  startButton.disabled = true;
   setMessage("Stopping hotspot…");
   try {
     const status = await requestJSON("/api/v1/hotspot/stop", { method: "POST" });
@@ -199,6 +207,7 @@ stopButton.addEventListener("click", async () => {
   } catch (error) {
     setMessage(error.message, true);
   } finally {
+    operationBusy = false;
     await refreshStatus();
   }
 });
