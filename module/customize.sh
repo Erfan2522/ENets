@@ -8,7 +8,7 @@ ui_print "*******************************"
 ui_print "- Installing ENets local dashboard"
 ui_print "- Bundles the pinned VirtualAP engine and hostapd/dnsmasq"
 ui_print "- Backend files are isolated under /data/local/enets"
-ui_print "- Dashboard hotspot controls are not enabled in this preview"
+ui_print "- Experimental hotspot start/stop controls are enabled"
 ui_print "- The server listens on 127.0.0.1 only"
 ABI="$(getprop ro.product.cpu.abi)"
 if [ "$ABI" != "arm64-v8a" ]; then
