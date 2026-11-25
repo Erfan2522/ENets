@@ -128,6 +128,8 @@ jobs:
             'Do not treat this build as device-validated until start/stop and client internet access have been tested.' \
             > "$STAGE/INSTALL-NOTES.txt"
 
+          chmod 0755 "$STAGE/service.sh" "$STAGE/uninstall.sh" "$STAGE/customize.sh"
+          chmod 0755 "$STAGE/payload/bin/virtualap" "$STAGE/payload/bin/hostapd" "$STAGE/payload/bin/dnsmasq"
           cd "$STAGE"
           zip -qr "$GITHUB_WORKSPACE/ENets-ARM64-integration-preview.zip" .
           unzip -l "$GITHUB_WORKSPACE/ENets-ARM64-integration-preview.zip"
