@@ -117,7 +117,7 @@ jobs:
             "ARM64 only. No 6 GHz support is claimed." \
             > "$STAGE/UPSTREAM-SOURCE.txt"
 
-          tar -czf "$RUNNER_TEMP/ENets-VirtualAP-corresponding-source.tar.gz" \
+          tar --exclude=.git --exclude="*/.git" -czf "$RUNNER_TEMP/ENets-VirtualAP-corresponding-source.tar.gz" \
             -C "$UPSTREAM" LICENSE Makefile src scripts build-in-container.sh externals .gitmodules
 
           printf '%s\n' \
