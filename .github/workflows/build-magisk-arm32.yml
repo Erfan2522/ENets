@@ -125,8 +125,7 @@ jobs:
             echo "WPA3 and device-specific SoftAP behavior remain unverified."
           } > "$STAGE/UPSTREAM-SOURCE.txt"
 
-          tar --exclude=.git --exclude="*/.git" -czf "$RUNNER_TEMP/ENets-VirtualAP-armhf-corresponding-source.tar.gz" \\
-            -C "$UPSTREAM" LICENSE Makefile src scripts externals .gitmodules
+          tar --exclude=.git --exclude="*/.git" -czf "$RUNNER_TEMP/ENets-VirtualAP-armhf-corresponding-source.tar.gz" -C "$UPSTREAM" LICENSE Makefile src scripts externals .gitmodules
 
           {
             echo "ENets ARM32 ARMv7 integration preview"
