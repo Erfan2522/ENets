@@ -31,6 +31,10 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/health", healthHandler)
 	mux.HandleFunc("/api/v1/capabilities", capabilitiesHandler)
+	mux.HandleFunc("/api/v1/hotspot/status", hotspotStatusHandler)
+	mux.HandleFunc("/api/v1/hotspot/start", hotspotStartHandler)
+	mux.HandleFunc("/api/v1/hotspot/stop", hotspotStopHandler)
+	mux.HandleFunc("/api/v1/hotspot/clients", hotspotClientsHandler)
 	mux.Handle("/", http.FileServer(http.Dir(absWebDir)))
 
 	server := &http.Server{
