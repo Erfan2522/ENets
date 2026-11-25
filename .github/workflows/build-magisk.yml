@@ -1,58 +1,118 @@
-name: Build Magisk preview
+name: Build ENets ARM64 Magisk preview
 
 on:
   push:
-    branches: [main]
+    branches: [main, "integration/**"]
     paths:
       - "server/**"
       - "web/**"
       - "module/**"
       - "go.mod"
+      - "docs/UPSTREAM_VIRTUALAP.md"
       - ".github/workflows/build-magisk.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
 
+env:
+  VIRTUALAP_COMMIT: 19718afbf5df48f12d82a8a30bf205cf7bfa6c6e
+  TOOLCHAINS_URL: https://github.com/ravindu644/Droidspaces-OSS/releases/download/compilers-25843896720
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
           cache: true
-      - name: Run tests
+
+      - name: Run ENets tests
         run: go test ./...
-      - name: Build Android-compatible ARM64 server
+
+      - name: Build Android-compatible ARM64 ENets server
         env:
           GOOS: linux
           GOARCH: arm64
           CGO_ENABLED: "0"
         run: go build -trimpath -ldflags="-s -w" -o enetsd ./server
-      - name: Assemble Magisk module ZIP
+
+      - name: Fetch pinned VirtualAP source and submodules
         run: |
-          set -eu
+          set -eux
+          git clone https://github.com/ravindu644/VirtualAP.git "$RUNNER_TEMP/VirtualAP"
+          git -C "$RUNNER_TEMP/VirtualAP" checkout "$VIRTUALAP_COMMIT"
+          git -C "$RUNNER_TEMP/VirtualAP" submodule update --init --recursive
+
+      - name: Build static hostapd and dnsmasq for ARM64
+        run: |
+          set -eux
+          bash "$RUNNER_TEMP/VirtualAP/scripts/build-static.sh" aarch64
+
+      - name: Install pinned ARM64 musl toolchain
+        run: |
+          set -eux
+          mkdir -p "$HOME/toolchains"
+          cd "$HOME/toolchains"
+          curl --fail --location --retry 3 "$TOOLCHAINS_URL/aarch64-linux-musl-cross.tar.zst" -o aarch64-linux-musl-cross.tar.zst
+          echo "03ae51af722af0dcffea0fc9eefb872a2a4e0a59300b612b1bff8b716404a8a1  aarch64-linux-musl-cross.tar.zst" | sha256sum -c -
+          tar --zstd -xf aarch64-linux-musl-cross.tar.zst
+          rm aarch64-linux-musl-cross.tar.zst
+
+      - name: Build VirtualAP engine
+        working-directory: ${{ runner.temp }}/VirtualAP
+        run: |
+          set -eux
+          make check
+          make aarch64 WERROR=1
+
+      - name: Assemble Magisk module and corresponding source
+        run: |
+          set -eux
+          UPSTREAM="$RUNNER_TEMP/VirtualAP"
           STAGE="$RUNNER_TEMP/enets-module"
-          mkdir -p "$STAGE/system/bin" "$STAGE/web"
-          cp module/module.prop module/customize.sh module/service.sh "$STAGE/"
-          cp module/uninstall.sh "$STAGE/"
+          mkdir -p "$STAGE/system/bin" "$STAGE/web" "$STAGE/payload/bin"
+
+          cp module/module.prop module/customize.sh module/service.sh module/uninstall.sh "$STAGE/"
           cp web/index.html web/style.css web/app.js "$STAGE/web/"
           install -m 0755 enetsd "$STAGE/system/bin/enetsd"
+          install -m 0755 "$UPSTREAM/backend/aarch64/virtualap" "$STAGE/payload/bin/virtualap"
+          install -m 0755 "$UPSTREAM/backend/aarch64/hostapd" "$STAGE/payload/bin/hostapd"
+          install -m 0755 "$UPSTREAM/backend/aarch64/dnsmasq" "$STAGE/payload/bin/dnsmasq"
+          (cd "$STAGE/payload/bin" && sha256sum virtualap hostapd dnsmasq > PAYLOAD_SHA256SUMS)
+
           printf '%s\n' \
-            'ENets v0.1.0-alpha preview package' \
-            'This build provides a read-only local dashboard only.' \
-            'It does not change hotspot settings, firewall rules, or routing.' \
-            'Requires Magisk and ARM64 Android.' \
+            "VirtualAP upstream commit: $VIRTUALAP_COMMIT" \
+            "Source: https://github.com/ravindu644/VirtualAP/tree/$VIRTUALAP_COMMIT" \
+            "ENets bundles the upstream engine and its hostapd/dnsmasq dependencies." \
+            "The current ENets dashboard is still read-only; hotspot controls are not exposed yet." \
+            "ARM64 only. No 6 GHz support is claimed." \
+            > "$STAGE/UPSTREAM-SOURCE.txt"
+
+          tar -czf "$RUNNER_TEMP/ENets-VirtualAP-corresponding-source.tar.gz" \
+            -C "$UPSTREAM" LICENSE Makefile src scripts build-in-container.sh externals .gitmodules
+
+          printf '%s\n' \
+            'ENets ARM64 integration preview' \
+            'Includes the pinned VirtualAP engine, hostapd, and dnsmasq payload.' \
+            'The Magisk service deploys these binaries under /data/local/virtualap/bin.' \
+            'The ENets dashboard remains read-only in this build.' \
+            'Do not treat this build as device-validated until start/stop and client internet access have been tested.' \
             > "$STAGE/INSTALL-NOTES.txt"
+
           cd "$STAGE"
-          zip -qr "$GITHUB_WORKSPACE/ENets-v0.1.0-alpha-preview.zip" .
-          unzip -l "$GITHUB_WORKSPACE/ENets-v0.1.0-alpha-preview.zip"
-      - name: Upload installable preview artifact
+          zip -qr "$GITHUB_WORKSPACE/ENets-ARM64-integration-preview.zip" .
+          unzip -l "$GITHUB_WORKSPACE/ENets-ARM64-integration-preview.zip"
+
+      - name: Upload installable preview and corresponding source
         uses: actions/upload-artifact@v4
         with:
-          name: ENets-v0.1.0-alpha-preview
-          path: ENets-v0.1.0-alpha-preview.zip
+          name: ENets-ARM64-integration-preview
+          path: |
+            ENets-ARM64-integration-preview.zip
+            ${{ runner.temp }}/ENets-VirtualAP-corresponding-source.tar.gz
           if-no-files-found: error
           retention-days: 30
