@@ -1,6 +1,6 @@
 id=enets
 name=ENets by Erfan
-version=v0.1.0-alpha
-versionCode=1
+version=v0.2.0-alpha
+versionCode=2
 author=Erfan2522
-description=ENets local dashboard preview. Hotspot controls are not yet implemented.
+description=ENets dashboard with isolated VirtualAP backend preview; hotspot controls not yet exposed.
