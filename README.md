@@ -29,7 +29,7 @@ ENets does not force a Wi-Fi country code. The integration patch removes the ups
 
 ## Installable preview
 
-The **Build ENets ARM64 Magisk preview** GitHub Actions workflow creates an installable ZIP artifact and a separate corresponding-source archive. Open the [integration branch Actions](https://github.com/Erfan2522/ENets/actions/workflows/build-magisk.yml?query=branch%3 integration%2Fvirtualap-backend) and download the latest successful artifact.
+The **Build ENets ARM64 Magisk preview** GitHub Actions workflow creates an installable ZIP artifact and a separate corresponding-source archive. Open the [integration branch Actions](https://github.com/Erfan2522/ENets/actions/workflows/build-magisk.yml) and download the latest successful artifact.
 
 Install the ZIP from Magisk and reboot. Open `http://127.0.0.1:8080` locally on the device. Do not expose this server to the LAN or hotspot clients.
 
