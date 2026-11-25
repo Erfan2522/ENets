@@ -3,6 +3,8 @@
 MODDIR=${0%/*}
 ENETS_BIN="$MODDIR/system/bin/enetsd"
 WEB_DIR="$MODDIR/web"
+PAYLOAD_DIR="$MODDIR/payload/bin"
+ENETS_DATA="/data/local/enets"
 LOG_FILE="$MODDIR/enets.log"
 PID_FILE="$MODDIR/enets.pid"
 
@@ -16,8 +18,32 @@ is_enets_process() {
   tr '\000' ' ' < "/proc/$CHECK_PID/cmdline" 2>/dev/null | grep -F "$ENETS_BIN" >/dev/null 2>&1
 }
 
-# This package currently contains a read-only dashboard preview.
-# Never change hotspot, firewall, routing, or vendor configuration.
+# VirtualAP is built from a pinned upstream commit. Keep its runtime files in
+# an ENets-owned directory so the original VirtualAP app cannot collide with it.
+install_backend_payload() {
+  [ -d "$PAYLOAD_DIR" ] || {
+    log "VirtualAP payload is not bundled; starting dashboard without hotspot backend."
+    return 0
+  }
+
+  for name in virtualap hostapd dnsmasq; do
+    [ -s "$PAYLOAD_DIR/$name" ] || {
+      log "Backend payload incomplete: missing $name."
+      return 1
+    }
+  done
+
+  mkdir -p "$ENETS_DATA/bin" "$ENETS_DATA/logs" "$ENETS_DATA/run" || return 1
+  for name in virtualap hostapd dnsmasq; do
+    cp -f "$PAYLOAD_DIR/$name" "$ENETS_DATA/bin/$name" || return 1
+    chmod 0755 "$ENETS_DATA/bin/$name" || return 1
+  done
+  log "Pinned VirtualAP engine payload installed under $ENETS_DATA/bin."
+  return 0
+}
+
+# The dashboard server remains loopback-only. No hotspot action is exposed by
+# this preview yet; the bundled engine is staged for the next integration step.
 ABI="$(getprop ro.product.cpu.abi)"
 case "$ABI" in
   arm64-v8a) ;;
@@ -29,6 +55,10 @@ esac
 
 [ -x "$ENETS_BIN" ] || { log "Server binary missing."; exit 0; }
 [ -d "$WEB_DIR" ] || { log "Dashboard assets missing."; exit 0; }
+install_backend_payload || {
+  log "Backend payload setup failed; dashboard will not be started."
+  exit 0
+}
 
 if [ -f "$PID_FILE" ]; then
   OLD_PID="$(cat "$PID_FILE" 2>/dev/null)"
