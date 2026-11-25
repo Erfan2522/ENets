@@ -327,7 +327,8 @@ stopButton.addEventListener("click", async () => {
   finally { operationBusy = false; await refreshStatus(); }
 });
 
-document.getElementById("save-profile").addEventListener("click", saveProfile);\ndocument.getElementById("export-diagnostics").addEventListener("click", exportDiagnostics);
+document.getElementById("save-profile").addEventListener("click", saveProfile);
+document.getElementById("export-diagnostics").addEventListener("click", exportDiagnostics);
 for (const control of form.querySelectorAll("input, select")) {
   control.addEventListener("input", scheduleSave);
   control.addEventListener("change", () => {

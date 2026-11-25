@@ -21,7 +21,7 @@
 - [x] Save settings as the user changes them
 - [x] Opt-in Auto Start after reboot; default OFF
 - [x] Named hotspot profiles
-- [x] Read-only diagnostics endpoint
+- [x] Read-only diagnostics endpoint and redacted log export\n- [x] Bounded dashboard watchdog (maximum three restart attempts per boot)
 - [x] Version and release information endpoint
 - [x] Keep dashboard bound to loopback only
 - [ ] Run CI tests and inspect ARM64 package
