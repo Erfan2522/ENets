@@ -21,87 +21,92 @@
         <a href="#system">System Status</a>
         <a href="#about">About ENets</a>
       </nav>
-      <div class="sidebar-foot">v0.1.0-alpha · Prototype</div>
+      <div class="sidebar-foot">v0.2.0-alpha · Integration preview</div>
     </aside>
 
     <main>
       <header class="topbar">
         <div><span class="eyebrow">NETWORK MANAGEMENT</span><h1>Dashboard</h1></div>
-        <span class="status"><i></i> Prototype mode</span>
+        <span class="status" id="connection-status"><i></i> Connecting</span>
       </header>
 
-      <section class="notice" role="status">
-        <strong>Preview only</strong>
-        <span>This interface is not connected to Android hotspot controls yet. Changes are not applied to your device.</span>
+      <section class="notice" role="status" id="notice">
+        <strong>Experimental backend</strong>
+        <span>ENets uses the pinned VirtualAP engine. Device compatibility is not guaranteed until hotspot startup and client internet access are tested on your firmware.</span>
       </section>
 
       <section id="dashboard" class="stats">
-        <article class="stat-card"><span>Hotspot</span><strong>Not connected</strong><small>Device integration pending</small></article>
-        <article class="stat-card"><span>Connected devices</span><strong>—</strong><small>Read-only discovery pending</small></article>
-        <article class="stat-card"><span>Wi-Fi band</span><strong>Not detected</strong><small>Capability detection pending</small></article>
+        <article class="stat-card"><span>Hotspot</span><strong id="hotspot-state">Checking…</strong><small id="hotspot-detail">Waiting for backend status</small></article>
+        <article class="stat-card"><span>Connected devices</span><strong id="client-count">—</strong><small>Read-only client list</small></article>
+        <article class="stat-card"><span>Wi-Fi band</span><strong id="active-band">—</strong><small>Reported by hotspot engine</small></article>
       </section>
 
       <section id="hotspot" class="panel">
-        <div class="panel-heading"><div><span class="eyebrow">CONFIGURATION</span><h2>Hotspot Settings</h2></div><span class="tag">Not applied</span></div>
+        <div class="panel-heading"><div><span class="eyebrow">CONFIGURATION</span><h2>Hotspot Settings</h2></div><span class="tag" id="hotspot-tag">Not running</span></div>
         <form id="hotspot-form">
           <div class="field">
             <label for="ssid">Network name (SSID)</label>
-            <input id="ssid" name="ssid" maxlength="32" value="ENets_Hotspot" autocomplete="off">
-            <small>1–32 characters. Actual device rules may vary.</small>
+            <input id="ssid" name="ssid" maxlength="32" value="ENets_Hotspot" autocomplete="off" required>
+            <small>1–32 UTF-8 bytes. Control characters are not allowed.</small>
           </div>
           <div class="field">
             <label for="password">Hotspot password</label>
-            <input id="password" name="password" type="password" minlength="8" maxlength="63" placeholder="Enter a new password" autocomplete="new-password">
-            <small>For WPA2/WPA3 personal modes, use 8–63 characters. No password is pre-filled.</small>
+            <input id="password" name="password" type="password" minlength="8" maxlength="63" placeholder="Enter a password" autocomplete="new-password">
+            <small>8–63 bytes for WPA2/WPA3. No password is saved in the browser.</small>
           </div>
           <div class="field-grid">
             <div class="field">
               <label for="security">Security type</label>
               <select id="security" name="security">
                 <option value="wpa2">WPA2-Personal</option>
-                <option value="wpa3">WPA3-Personal — if supported</option>
-                <option value="transition">WPA2/WPA3 — if supported</option>
+                <option value="wpa3">WPA3-Personal</option>
+                <option value="wpa2wpa3">WPA2/WPA3 transition</option>
+                <option value="open">Open (no password)</option>
               </select>
             </div>
             <div class="field">
               <label for="band">Wi-Fi band</label>
               <select id="band" name="band">
-                <option value="auto">Auto (recommended)</option>
-                <option value="2.4">2.4 GHz — if supported</option>
-                <option value="5">5 GHz — if supported</option>
-                <option value="6">6 GHz — if supported</option>
+                <option value="2.4">2.4 GHz</option>
+                <option value="5">5 GHz</option>
               </select>
             </div>
             <div class="field">
               <label for="channel">Channel</label>
-              <select id="channel" name="channel"><option value="auto">Auto</option></select>
-              <small>Manual channels will appear only when safely detected.</small>
+              <input id="channel" name="channel" type="number" min="1" max="177" placeholder="Auto">
+              <small>Leave empty for automatic selection. Regional and driver limits apply.</small>
             </div>
             <div class="field">
-              <label for="max-clients">Maximum devices</label>
-              <select id="max-clients" name="max-clients">
-                <option>5</option><option selected>10</option><option>15</option><option>20</option>
+              <label for="width">Channel width</label>
+              <select id="width" name="width">
+                <option value="auto">Auto</option>
+                <option value="20">20 MHz</option>
+                <option value="40">40 MHz</option>
+                <option value="80">80 MHz (5 GHz only)</option>
               </select>
             </div>
           </div>
           <label class="check"><input type="checkbox" id="hidden"> <span>Hide network name (SSID)</span></label>
-          <button type="submit" disabled>Apply settings</button>
-          <p class="form-message" id="form-message">Controls are disabled until a compatible Android integration is implemented.</p>
+          <div class="button-row">
+            <button type="submit" id="start-button">Apply &amp; start hotspot</button>
+            <button type="button" id="stop-button" class="secondary">Stop hotspot</button>
+          </div>
+          <p class="form-message" id="form-message" aria-live="polite">Settings are applied only after you start the hotspot.</p>
         </form>
       </section>
 
       <section id="clients" class="panel">
         <div class="panel-heading"><div><span class="eyebrow">CLIENTS</span><h2>Connected Devices</h2></div><span class="tag">Read-only</span></div>
-        <div class="empty"><strong>No device data available</strong><span>Client discovery will be added after device and firmware testing.</span></div>
+        <div id="client-list" class="empty"><strong>No device data available</strong><span>Client discovery is queried from the hotspot engine while it is running.</span></div>
       </section>
 
       <section id="system" class="panel compact">
         <div class="panel-heading"><div><span class="eyebrow">DIAGNOSTICS</span><h2>System Status</h2></div></div>
-        <p class="muted">Read-only device information. A detected radio band is not confirmation that hotspot mode supports it.</p>
+        <p class="muted">Read-only device information. Detected radio frequencies do not guarantee hotspot support on every firmware.</p>
         <div id="capability-results" aria-live="polite"><p class="muted">Waiting for local server…</p></div>
       </section>
 
-      <footer id="about">ENets by Erfan · Open source · GPL-3.0-only</footer>
+      <footer id="about">ENets by Erfan · Open source · GPL-3.0-only · VirtualAP attribution and source details are in the repository.</footer>
     </main>
   </div>
   <script src="app.js"></script>
