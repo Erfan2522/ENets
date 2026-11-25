@@ -15,6 +15,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: enets-virtualap-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   VIRTUALAP_COMMIT: 19718afbf5df48f12d82a8a30bf205cf7bfa6c6e
   TOOLCHAINS_URL: https://github.com/ravindu644/Droidspaces-OSS/releases/download/compilers-25843896720
