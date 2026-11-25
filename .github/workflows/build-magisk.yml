@@ -113,7 +113,7 @@ jobs:
             "Source: https://github.com/ravindu644/VirtualAP/tree/$VIRTUALAP_COMMIT" \
             "ENets patch: private data path /data/local/enets; removed hardcoded US regulatory domain." \
             "ENets bundles the upstream engine and its hostapd/dnsmasq dependencies." \
-            "The current ENets dashboard is still read-only; hotspot controls are not exposed yet." \
+            "The dashboard includes same-origin local hotspot start/stop controls; device compatibility remains unverified." \
             "ARM64 only. No 6 GHz support is claimed." \
             > "$STAGE/UPSTREAM-SOURCE.txt"
 
@@ -123,8 +123,8 @@ jobs:
           printf '%s\n' \
             'ENets ARM64 integration preview' \
             'Includes the pinned VirtualAP engine, hostapd, and dnsmasq payload.' \
-            'The Magisk service deploys these binaries under /data/local/virtualap/bin.' \
-            'The ENets dashboard remains read-only in this build.' \
+            'The Magisk service deploys these binaries under /data/local/enets/bin.' \
+            'The ENets dashboard includes local hotspot controls; validate on-device before relying on them.' \
             'Do not treat this build as device-validated until start/stop and client internet access have been tested.' \
             > "$STAGE/INSTALL-NOTES.txt"
 
