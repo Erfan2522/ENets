@@ -27,3 +27,16 @@
   font-size: 12px;
   text-align: right;
 }
+
+
+.button-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button{cursor:pointer}
+button.secondary{background:#e8edf5;color:#334155}
+button.secondary:disabled{background:#eef1f5;color:#9aa4b2;cursor:not-allowed}
+button:disabled{cursor:not-allowed}
+.form-message.error{color:#b42318}
+.field input:disabled{background:#f3f5f8;color:#98a2b3}
+.client-table-wrap{overflow-x:auto}
+.client-table-wrap table{width:100%;border-collapse:collapse;font-size:12px;text-align:left}
+.client-table-wrap th,.client-table-wrap td{padding:11px 12px;border-bottom:1px solid #edf0f4;white-space:nowrap}
+.client-table-wrap th{color:#667085;font-weight:650;background:#f8fafc}
