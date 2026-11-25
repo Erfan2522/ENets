@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var secretLogPattern = regexp.MustCompile(`(?i)(password|passphrase|psk)(\s*[:=]\s*)[^\s"'&]+`)
+var secretLogPattern = regexp.MustCompile(`(?i)(password|passphrase|psk)(\s*[:=]\s*)(?:'[^']*'|"[^"]*"|[^\s&]+)`)
 
 func diagnosticLogsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
