@@ -27,9 +27,9 @@ The backend's minimum routing/NAT behavior is required for internet sharing. ENe
 
 ## Required ENets adaptations before enabling the backend
 
-1. Change the upstream data directory from `/data/local/virtualap` to an ENets-owned path and ensure uninstall removes only ENets-owned files.
+1. The CI build patches `VAP_BASE` from `/data/local/virtualap` to `/data/local/enets`, keeping runtime files isolated from the original VirtualAP app. Uninstall stops only the ENets instance and preserves its config/logs.
 2. Make AP interface selection capability-driven. Upstream currently hardcodes `AP_IFACE=ap0`; this is not a cross-device guarantee.
-3. Remove the hardcoded `country_code=US`. Read the device's regulatory domain and fail safely when it cannot be established; never silently force a country.
+3. The CI build removes the hardcoded `country_code=US` and `ieee80211d=1` lines so hostapd follows the device/kernel regulatory domain instead of forcing a country. Validate actual channel availability on each device.
 4. Keep only the required start/stop/status/capability/client-read commands. Do not expose upstream block/allow commands in the ENets API or dashboard.
 5. Keep 6 GHz disabled/unsupported until the engine and hostapd configuration are explicitly extended and validated. The inspected upstream CLI currently exposes only 2.4 and 5 GHz.
 6. Detect the required interface/driver/hostapd capabilities before attempting a start. Do not infer AP support from `iw list` alone.
@@ -48,4 +48,4 @@ The backend's minimum routing/NAT behavior is required for internet sharing. ENe
 
 ## Status
 
-This document records source and architecture evaluation only. The upstream engine has not yet been imported, built into an ENets package, or validated on the user's device. The default `main` branch remains unchanged; integration work is isolated on `integration/virtualap-backend`.
+The integration branch now has a CI workflow that checks out a pinned upstream commit, applies the ENets data-path and regulatory-domain patches, builds the ARM64 engine/daemons, and packages them into a Magisk preview. The module service stages the binaries under `/data/local/enets/bin`. The dashboard still does not expose hotspot controls. A successful CI build is not device validation. The default `main` branch remains unchanged; integration work is isolated on `integration/virtualap-backend`.
