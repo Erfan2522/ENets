@@ -12,21 +12,12 @@ import (
 )
 
 func main() {
-	// ENets deliberately binds to loopback only. Do not make this configurable
-	// until authentication, CSRF protection, and interface restrictions exist.
 	const addr = "127.0.0.1:8080"
-
 	webDir := os.Getenv("ENETS_WEB_DIR")
-	if webDir == "" {
-		webDir = "web"
-	}
+	if webDir == "" { webDir = "web" }
 	absWebDir, err := filepath.Abs(webDir)
-	if err != nil {
-		log.Fatalf("resolve web directory: %v", err)
-	}
-	if info, err := os.Stat(absWebDir); err != nil || !info.IsDir() {
-		log.Fatalf("web directory is unavailable: %s", absWebDir)
-	}
+	if err != nil { log.Fatalf("resolve web directory: %v", err) }
+	if info, err := os.Stat(absWebDir); err != nil || !info.IsDir() { log.Fatalf("web directory is unavailable: %s", absWebDir) }
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/health", healthHandler)
@@ -35,45 +26,26 @@ func main() {
 	mux.HandleFunc("/api/v1/hotspot/start", hotspotStartHandler)
 	mux.HandleFunc("/api/v1/hotspot/stop", hotspotStopHandler)
 	mux.HandleFunc("/api/v1/hotspot/clients", hotspotClientsHandler)
+	mux.HandleFunc("/api/v1/settings", settingsHandler)
+	mux.HandleFunc("/api/v1/profiles", profilesHandler)
+	mux.HandleFunc("/api/v1/diagnostics", diagnosticsHandler)
+	mux.HandleFunc("/api/v1/diagnostics/logs", diagnosticLogsHandler)
+	mux.HandleFunc("/api/v1/version", versionHandler)
 	mux.Handle("/", http.FileServer(http.Dir(absWebDir)))
 
-	server := &http.Server{
-		Addr:              addr,
-		Handler:           securityHeaders(localHostOnly(mux)),
-		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       10 * time.Second,
-		WriteTimeout:      150 * time.Second,
-		IdleTimeout:       60 * time.Second,
-		MaxHeaderBytes:    1 << 20,
-	}
-
+	server := &http.Server{Addr: addr, Handler: securityHeaders(localHostOnly(mux)), ReadHeaderTimeout: 5*time.Second, ReadTimeout: 10*time.Second, WriteTimeout: 150*time.Second, IdleTimeout: 60*time.Second, MaxHeaderBytes: 1<<20}
 	log.Printf("ENets local server listening on %s", addr)
 	log.Printf("Serving dashboard assets from %s", absWebDir)
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Fatalf("server stopped: %v", err)
-	}
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed { log.Fatalf("server stopped: %v", err) }
 }
 
 func localHostOnly(next http.Handler) http.Handler {
-	allowedHosts := map[string]bool{
-		"127.0.0.1:8080": true,
-		"localhost:8080": true,
-		"[::1]:8080":     true,
-		"127.0.0.1":      true,
-		"localhost":      true,
-		"[::1]":          true,
-	}
+	allowedHosts := map[string]bool{"127.0.0.1:8080": true, "localhost:8080": true, "[::1]:8080": true, "127.0.0.1": true, "localhost": true, "[::1]": true}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		host := strings.ToLower(r.Host)
-		if !allowedHosts[host] {
-			http.Error(w, "host not allowed", http.StatusForbidden)
-			return
-		}
+		if !allowedHosts[host] { http.Error(w, "host not allowed", http.StatusForbidden); return }
 		remoteHost, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err != nil || net.ParseIP(remoteHost) == nil || !net.ParseIP(remoteHost).IsLoopback() {
-			http.Error(w, "local access only", http.StatusForbidden)
-			return
-		}
+		if err != nil || net.ParseIP(remoteHost) == nil || !net.ParseIP(remoteHost).IsLoopback() { http.Error(w, "local access only", http.StatusForbidden); return }
 		next.ServeHTTP(w, r)
 	})
 }
@@ -90,11 +62,7 @@ func securityHeaders(next http.Handler) http.Handler {
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		w.Header().Set("Allow", http.MethodGet)
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
+	if r.Method != http.MethodGet { w.Header().Set("Allow", http.MethodGet); http.Error(w, "method not allowed", http.StatusMethodNotAllowed); return }
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok", "mode": "read_only_preview"})
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok", "mode": "local_hotspot_manager"})
 }

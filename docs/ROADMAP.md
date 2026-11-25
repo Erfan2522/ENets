@@ -9,25 +9,33 @@
 - [x] Cross-device adapter contract and feature-level fallback policy
 
 ## v0.2.0-alpha — VirtualAP integration preview
-- [x] Pin and document the VirtualAP upstream source and license
-- [x] Build ARM64 VirtualAP, hostapd, and dnsmasq in CI
-- [x] Isolate the engine runtime under `/data/local/enets`
-- [x] Remove the upstream hardcoded US regulatory-domain setting
-- [x] Add same-origin, loopback-only start/stop API endpoints
-- [x] Add SSID, password, security, 2.4/5 GHz, channel, width, and hidden-SSID controls
-- [x] Add read-only status and connected-client API endpoints
-- [x] Add validation tests for configuration and same-origin requests
-- [ ] Confirm the latest CI build and corresponding-source artifact
-- [ ] Install and test on the first ARM64 device
-- [ ] Verify client association and actual internet sharing
-- [ ] Verify upgrade, stop, reboot, and uninstall recovery paths
+- [x] Pinned VirtualAP engine and ARM64 payload
+- [x] ENets-specific runtime path and regulatory-domain adaptations
+- [x] Loopback-only hotspot start/stop controls
+- [x] SSID, password, security, band, channel, width and hidden SSID
+- [x] Read-only hotspot status and connected-client list
+- [x] User-reported POCO M5s Android 17 test
+
+## v0.3.0-alpha — persistence and reliability
+- [x] Root-only atomic settings persistence with private file permissions
+- [x] Save settings as the user changes them
+- [x] Opt-in Auto Start after reboot; default OFF
+- [x] Named hotspot profiles
+- [x] Read-only diagnostics endpoint
+- [x] Version and release information endpoint
+- [x] Keep dashboard bound to loopback only
+- [ ] Run CI tests and inspect ARM64 package
+- [ ] On-device test settings persistence across app close and reboot
+- [ ] Test Auto Start OFF and ON paths
+- [ ] Verify upgrade preserves settings and profiles
+- [ ] Validate WPA3 SoftAP capability on supported devices before enabling it
+- [ ] Validate connected-client metadata and recovery behavior
 
 ## Beta
-- [ ] Introduce device/firmware adapter matching and capability-specific controls
-- [ ] Validate supported bands, channels, channel widths, and security modes per device
-- [ ] Add safe configuration backup and restore
-- [ ] Test multiple OEM families and Android versions
-- [ ] Consider additional ABIs only after separate build and device tests
+- [ ] Device/firmware adapter matching and capability-specific controls
+- [ ] Validated WPA3/WPA2 transition mode per device
+- [ ] Safe configuration backup and restore
+- [ ] Multiple OEM families and Android versions
 
 ## Stable
 - [ ] Broader device/firmware compatibility matrix

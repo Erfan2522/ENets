@@ -17,9 +17,14 @@ ENets is an open-source Magisk module for managing Wi-Fi hotspots on rooted Andr
 
 The project uses a customized, pinned version of [VirtualAP](https://github.com/ravindu644/VirtualAP) as its hotspot backend.
 
-> **Status: v0.2.0-alpha integration preview.** This is an experimental build. Device and firmware compatibility must be evaluated individually.
+> **Status: v0.3.0-alpha integration preview.** This is an experimental build. Device and firmware compatibility must be evaluated individually.
 
 ### Features
+
+- Save SSID, password and hotspot configuration automatically on this device.
+- Create named hotspot profiles.
+- Opt-in Auto Start after reboot (disabled by default).
+- View local diagnostics and export a redacted log excerpt.
 
 - Start and stop the Wi-Fi access point.
 - Configure the hotspot name (SSID) and password.
@@ -99,11 +104,16 @@ ENets یک پروژه متن‌باز برای مدیریت هات‌اسپات 
 
 این پروژه با استفاده از ماژول Magisk و موتور VirtualAP، یک داشبورد تحت وب محلی در اختیار کاربر قرار می‌دهد تا بتواند تنظیمات هات‌اسپات را مدیریت کند.
 
-**وضعیت فعلی:** نسخه آزمایشی `v0.2.0-alpha`  
+**وضعیت فعلی:** نسخه آزمایشی `v0.3.0-alpha`  
 **شاخه توسعه:** `integration/virtualap-backend`  
 **مجوز:** GNU GPL-3.0-only
 
 ### امکانات
+
+- ذخیره خودکار نام شبکه، رمز و تنظیمات هات‌اسپات
+- ساخت پروفایل‌های مختلف
+- راه‌اندازی خودکار پس از روشن شدن گوشی، فقط با فعال‌سازی کاربر
+- مشاهده عیب‌یابی و دریافت گزارش پاک‌سازی‌شده از اطلاعات حساس
 
 - روشن و خاموش کردن هات‌اسپات
 - تعیین نام شبکه (SSID)

@@ -1,17 +1,14 @@
 # Security model
 
-This alpha is a UI and repository scaffold, not a deployable hotspot controller.
+ENets v0.3.0-alpha is an experimental, local-only hotspot manager.
 
-Before remote dashboard access is enabled:
-- Require an administrator-created credential; never ship a shared default password.
-- Store password verifiers using a suitable password-hashing algorithm and random salt.
-- Use secure session handling, CSRF protection, login throttling, and logout/revocation.
-- Bind only to the detected hotspot interface and reject requests from other interfaces.
-- Do not expose the service to the general LAN or internet.
-- Never log hotspot passphrases, admin passwords, session tokens, or other secrets.
-- Validate every setting on both client and server.
-- Keep configuration files readable only by the module/service account.
-- Do not change firewall rules or block clients.
-- Require explicit user approval for updates and configuration restore.
-
-The current Go server binds to loopback only. Keep that default until the controls above are implemented and tested.
+- The Go server binds only to `127.0.0.1:8080` and rejects non-loopback peers and untrusted Host headers.
+- State-changing requests require same-origin validation and a root-running service.
+- Hotspot settings and profiles are stored under `/data/local/enets` with mode 0600; the parent directory is mode 0700.
+- Writes use temporary files, fsync and atomic rename.
+- The hotspot passphrase is persisted because the user requested settings restoration. It is returned only to the loopback dashboard so the form can be restored; it is never included in diagnostic responses.
+- Diagnostic log export is limited to a recent excerpt and redacts common password/passphrase fields. Treat logs as sensitive nonetheless.
+- Auto Start is opt-in and defaults to OFF. Boot performs one start attempt only when the saved preference is enabled.
+- WPA3 SoftAP is not enabled based on generic radio detection. A device/firmware-specific SAE capability check must be validated first.
+- Updates are informational in this alpha; users review releases and install manually.
+- Never expose the server to the LAN or hotspot clients.

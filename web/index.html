@@ -10,103 +10,65 @@
 <body>
   <div class="layout">
     <aside class="sidebar">
-      <a class="brand" href="#" aria-label="ENets home">
-        <span class="brand-mark">E</span>
-        <span><strong>ENets</strong><small>by Erfan</small></span>
-      </a>
+      <a class="brand" href="#" aria-label="ENets home"><span class="brand-mark">E</span><span><strong>ENets</strong><small>by Erfan</small></span></a>
       <nav aria-label="Main navigation">
         <a class="active" href="#dashboard">Dashboard</a>
         <a href="#hotspot">Hotspot Settings</a>
+        <a href="#profiles">Profiles</a>
         <a href="#clients">Connected Devices</a>
-        <a href="#system">System Status</a>
+        <a href="#system">Diagnostics</a>
         <a href="#about">About ENets</a>
       </nav>
-      <div class="sidebar-foot">v0.2.0-alpha · Integration preview</div>
+      <div class="sidebar-foot">v0.3.0-alpha · Experimental</div>
     </aside>
-
     <main>
       <header class="topbar">
         <div><span class="eyebrow">NETWORK MANAGEMENT</span><h1>Dashboard</h1></div>
         <span class="status" id="connection-status"><i></i> Connecting</span>
       </header>
-
-      <section class="notice" role="status" id="notice">
-        <strong>Experimental backend</strong>
-        <span>ENets uses the pinned VirtualAP engine. Device compatibility is not guaranteed until hotspot startup and client internet access are tested on your firmware.</span>
-      </section>
-
+      <section class="notice" role="status"><strong>Experimental backend</strong><span>Compatibility depends on your device and firmware. Confirm hotspot startup and client internet access after configuration changes.</span></section>
       <section id="dashboard" class="stats">
         <article class="stat-card"><span>Hotspot</span><strong id="hotspot-state">Checking…</strong><small id="hotspot-detail">Waiting for backend status</small></article>
-        <article class="stat-card"><span>Connected devices</span><strong id="client-count">—</strong><small>Read-only client list</small></article>
+        <article class="stat-card"><span>Connected devices</span><strong id="client-count">—</strong><small>Live backend report</small></article>
         <article class="stat-card"><span>Wi-Fi band</span><strong id="active-band">—</strong><small>Reported by hotspot engine</small></article>
       </section>
-
       <section id="hotspot" class="panel">
         <div class="panel-heading"><div><span class="eyebrow">CONFIGURATION</span><h2>Hotspot Settings</h2></div><span class="tag" id="hotspot-tag">Not running</span></div>
         <form id="hotspot-form">
-          <div class="field">
-            <label for="ssid">Network name (SSID)</label>
-            <input id="ssid" name="ssid" maxlength="32" value="ENets_Hotspot" autocomplete="off" required>
-            <small>1–32 UTF-8 bytes. Control characters are not allowed.</small>
-          </div>
-          <div class="field">
-            <label for="password">Hotspot password</label>
-            <input id="password" name="password" type="password" minlength="8" maxlength="63" placeholder="Enter a password" autocomplete="new-password">
-            <small>8–63 bytes for WPA2/WPA3. No password is saved in the browser.</small>
-          </div>
+          <div class="field"><label for="ssid">Network name (SSID)</label><input id="ssid" name="ssid" maxlength="32" value="ENets_Hotspot" autocomplete="off" required><small>1–32 UTF-8 bytes.</small></div>
+          <div class="field"><label for="password">Hotspot password</label><input id="password" name="password" type="password" minlength="8" maxlength="63" placeholder="Enter a password" autocomplete="new-password"><small>8–63 bytes for WPA2. Saved in the private ENets data directory.</small></div>
           <div class="field-grid">
-            <div class="field">
-              <label for="security">Security type</label>
-              <select id="security" name="security">
-                <option value="wpa2">WPA2-Personal</option>
-                <option value="wpa3">WPA3-Personal</option>
-                <option value="wpa2wpa3">WPA2/WPA3 transition</option>
-                <option value="open">Open (no password)</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="band">Wi-Fi band</label>
-              <select id="band" name="band">
-                <option value="2.4">2.4 GHz</option>
-                <option value="5">5 GHz</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="channel">Channel</label>
-              <input id="channel" name="channel" type="number" min="1" max="177" placeholder="Auto">
-              <small>Leave empty for automatic selection. Regional and driver limits apply.</small>
-            </div>
-            <div class="field">
-              <label for="width">Channel width</label>
-              <select id="width" name="width">
-                <option value="auto">Auto</option>
-                <option value="20">20 MHz</option>
-                <option value="40">40 MHz</option>
-                <option value="80">80 MHz (5 GHz only)</option>
-              </select>
-            </div>
+            <div class="field"><label for="security">Security type</label><select id="security" name="security"><option value="wpa2">WPA2-Personal</option><option value="wpa3" disabled>WPA3-Personal (not validated)</option><option value="wpa2wpa3" disabled>WPA2/WPA3 transition (not validated)</option><option value="open">Open (no password)</option></select></div>
+            <div class="field"><label for="band">Wi-Fi band</label><select id="band" name="band"><option value="2.4">2.4 GHz</option><option value="5">5 GHz</option></select></div>
+            <div class="field"><label for="channel">Channel</label><input id="channel" name="channel" type="number" min="1" max="177" placeholder="Auto"><small>Leave empty for automatic selection.</small></div>
+            <div class="field"><label for="width">Channel width</label><select id="width" name="width"><option value="auto">Auto</option><option value="20">20 MHz</option><option value="40">40 MHz</option><option value="80">80 MHz (5 GHz only)</option></select></div>
           </div>
           <label class="check"><input type="checkbox" id="hidden"> <span>Hide network name (SSID)</span></label>
-          <div class="button-row">
-            <button type="submit" id="start-button">Apply &amp; start hotspot</button>
-            <button type="button" id="stop-button" class="secondary">Stop hotspot</button>
-          </div>
-          <p class="form-message" id="form-message" aria-live="polite">Settings are applied only after you start the hotspot.</p>
+          <label class="check"><input type="checkbox" id="auto-start"> <span>Auto Start hotspot after phone reboot (off by default)</span></label>
+          <div class="button-row"><button type="submit" id="start-button">Apply &amp; start hotspot</button><button type="button" id="stop-button" class="secondary">Stop hotspot</button></div>
+          <p class="form-message" id="form-message" aria-live="polite">Settings are saved automatically as you change them.</p>
         </form>
       </section>
-
+      <section id="profiles" class="panel">
+        <div class="panel-heading"><div><span class="eyebrow">PRESETS</span><h2>Hotspot Profiles</h2></div></div>
+        <div class="field-grid"><div class="field"><label for="profile-select">Saved profiles</label><select id="profile-select"><option value="">Select a profile</option></select></div><div class="field"><label>&nbsp;</label><button type="button" id="save-profile">Save current settings as profile</button></div></div>
+        <p class="muted">Profiles are stored privately on this device. Maximum 12 profiles.</p>
+      </section>
       <section id="clients" class="panel">
         <div class="panel-heading"><div><span class="eyebrow">CLIENTS</span><h2>Connected Devices</h2></div><span class="tag">Read-only</span></div>
-        <div id="client-list" class="empty"><strong>No device data available</strong><span>Client discovery is queried from the hotspot engine while it is running.</span></div>
+        <div id="client-list" class="empty"><strong>No device data available</strong><span>Client discovery is queried while the hotspot is running.</span></div>
       </section>
-
       <section id="system" class="panel compact">
         <div class="panel-heading"><div><span class="eyebrow">DIAGNOSTICS</span><h2>System Status</h2></div></div>
-        <p class="muted">Read-only device information. Detected radio frequencies do not guarantee hotspot support on every firmware.</p>
-        <div id="capability-results" aria-live="polite"><p class="muted">Waiting for local server…</p></div>
+        <div id="capability-results"><p class="muted">Waiting for capability detection…</p></div>
+        <div id="diagnostic-summary" aria-live="polite"></div><div class="button-row"><button type="button" id="export-diagnostics" class="secondary">Export redacted logs</button></div>
       </section>
-
-      <footer id="about">ENets by Erfan · Open source · GPL-3.0-only · VirtualAP attribution and source details are in the repository.</footer>
+      <section id="about" class="panel compact">
+        <div class="panel-heading"><div><span class="eyebrow">SOFTWARE</span><h2>ENets Version</h2></div><strong id="version-label">Checking…</strong></div>
+        <p class="muted">Updates require user review and manual installation in this alpha.</p>
+        <a id="release-link" href="https://github.com/Erfan2522/ENets/releases" target="_blank" rel="noopener noreferrer">View releases and changelog</a>
+      </section>
+      <footer>ENets by Erfan · GPL-3.0-only · Local dashboard only</footer>
     </main>
   </div>
   <script src="app.js"></script>

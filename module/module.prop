@@ -1,6 +1,6 @@
 id=enets
 name=ENets by Erfan
-version=v0.2.0-alpha
-versionCode=2
+version=v0.3.0-alpha
+versionCode=3
 author=Erfan2522
-description=ENets local hotspot dashboard with experimental VirtualAP controls.
+description=ENets hotspot manager with persistent settings, profiles and diagnostics.

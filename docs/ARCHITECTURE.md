@@ -1,51 +1,41 @@
 # Architecture
 
 ## Components
+- **Magisk module:** installer, lifecycle service, backend payload and opt-in boot Auto Start.
+- **Go server:** loopback-only API, hotspot control, settings persistence, profiles and diagnostics.
+- **Web dashboard:** responsive HTML, CSS and JavaScript; settings are saved as they change.
+- **Capability registry:** read-only evidence; unknown capabilities are not presented as supported.
 
-- **Magisk module:** module metadata, installer, lifecycle service, and uninstall handling.
-- **Go server:** loopback-only local HTTP server and read-only capability API.
-- **Web dashboard:** responsive HTML, CSS, and JavaScript.
-- **Android adapter layer (planned):** capability detection and device-specific hotspot operations.
-- **Capability registry:** independent status and explanation for every feature.
+## Persistent data
+All ENets runtime data is stored under `/data/local/enets`.
+- `ap.conf`: VirtualAP configuration, including the hotspot passphrase; mode 0600.
+- `settings.json`: saved dashboard settings and Auto Start preference; mode 0600.
+- `profiles.json`: named profiles; mode 0600.
+- `autostart`: one-line boot preference; mode 0600.
 
-## Cross-device design
+Writes use a temporary file, fsync and atomic rename. Saved settings are returned only to the loopback dashboard so the form can be restored. Diagnostic exports redact common password/passphrase fields.
 
-The dashboard and core server must remain device-independent. Device-specific behavior belongs in adapters selected using verified platform and device information (for example, Android release, vendor, firmware family, and available system interfaces).
+## Boot behavior
+The Magisk service starts the local dashboard after boot. It starts the hotspot only when the user has explicitly enabled Auto Start. Missing preference means OFF. Auto Start makes one attempt; it does not loop indefinitely.
 
-Adapters must expose the same capability-oriented contract to the core. Adding support for a new manufacturer or firmware family should not require rewriting the dashboard or core. See [ADAPTER_CONTRACT.md](ADAPTER_CONTRACT.md).
+## Security and compatibility
+- Bind only to `127.0.0.1:8080`; reject non-loopback peers and untrusted Host headers.
+- State-changing API calls require same-origin requests and root.
+- Keep configuration files private (0600); parent runtime directory is 0700.
+- WPA3 is not declared supported from generic radio frequency data. Enable only after device/firmware SoftAP SAE capability is positively validated.
+- Unknown capabilities remain unavailable rather than guessed.
 
-## Graceful feature-level compatibility
+## API
+- `GET /api/v1/health`
+- `GET /api/v1/capabilities`
+- `GET /api/v1/hotspot/status`
+- `POST /api/v1/hotspot/start`
+- `POST /api/v1/hotspot/stop`
+- `GET /api/v1/hotspot/clients`
+- `GET|PUT /api/v1/settings`
+- `GET|POST /api/v1/profiles`
+- `GET /api/v1/diagnostics`
+- `GET /api/v1/diagnostics/logs` — recent redacted log excerpt
+- `GET /api/v1/version`
 
-An unsupported feature must not disable the whole application. ENets disables only that feature's control and explains why; unrelated supported features remain available.
-
-Each capability has its own status:
-- `supported`: detected and validated on this device/firmware combination.
-- `unsupported`: confirmed unavailable or unsafe to control.
-- `unknown`: insufficient evidence; do not offer an operation yet.
-- `error`: capability check or operation failed.
-
-Do not treat radio/driver detection as proof that Android hotspot configuration supports the same feature. Do not report a setting as applied until the platform confirms it.
-
-Adapter failures must be isolated. A failed operation must not corrupt unrelated settings or take down the core dashboard.
-
-## Current preview boundaries
-
-The installable preview:
-- Starts the Go server through the Magisk service script on ARM64 devices.
-- Binds only to `127.0.0.1:8080`.
-- Accepts only loopback peers and localhost Host values.
-- Serves the static dashboard and read-only capability endpoint.
-- Does not change hotspot settings, firewall rules, routing, or vendor files.
-- Does not yet implement authentication because there are no write/control endpoints and the server is strictly local/read-only. Authentication and authorization are mandatory before adding any state-changing or remote access feature.
-
-The preview is not the completed hotspot manager.
-
-## Planned API areas
-
-- `GET /api/v1/health` — local server health.
-- `GET /api/v1/capabilities` — read-only device capability report.
-- Future `GET /api/v1/hotspot` — current hotspot state, with secrets omitted.
-- Future `PUT /api/v1/hotspot` — validated settings request, requiring authentication and CSRF protection.
-- Future `GET /api/v1/clients` — read-only connected-client information.
-
-Future endpoints are design notes only; they are not implemented in this preview.
+The service is intentionally local-only. Do not expose it to LAN or hotspot clients.
