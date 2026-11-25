@@ -116,24 +116,24 @@ jobs:
           install -m 0755 "$UPSTREAM/backend/armhf/dnsmasq" "$STAGE/payload/bin/dnsmasq"
           (cd "$STAGE/payload/bin" && sha256sum virtualap hostapd dnsmasq > PAYLOAD_SHA256SUMS)
 
-          printf '%s\\n' \\
-            "VirtualAP upstream commit: $VIRTUALAP_COMMIT" \\
-            "Source: https://github.com/ravindu644/VirtualAP/tree/$VIRTUALAP_COMMIT" \\
-            "ENets patch: private data path /data/local/enets; removed hardcoded US regulatory domain." \\
-            "ENets bundles the upstream engine and its hostapd/dnsmasq dependencies." \\
-            "ARM32 ARMv7 hard-float (armeabi-v7a compatible); no ARM64 binaries are included." \\
-            "WPA3 and device-specific SoftAP behavior remain unverified." \\
-            > "$STAGE/UPSTREAM-SOURCE.txt"
+          {
+            echo "VirtualAP upstream commit: $VIRTUALAP_COMMIT"
+            echo "Source: https://github.com/ravindu644/VirtualAP/tree/$VIRTUALAP_COMMIT"
+            echo "ENets patch: private data path /data/local/enets; removed hardcoded US regulatory domain."
+            echo "ENets bundles the upstream engine and its hostapd/dnsmasq dependencies."
+            echo "ARM32 ARMv7 hard-float (armeabi-v7a compatible); no ARM64 binaries are included."
+            echo "WPA3 and device-specific SoftAP behavior remain unverified."
+          } > "$STAGE/UPSTREAM-SOURCE.txt"
 
           tar --exclude=.git --exclude="*/.git" -czf "$RUNNER_TEMP/ENets-VirtualAP-armhf-corresponding-source.tar.gz" \\
             -C "$UPSTREAM" LICENSE Makefile src scripts externals .gitmodules
 
-          printf '%s\\n' \\
-            'ENets ARM32 ARMv7 integration preview' \\
-            'Built for 32-bit ARMv7 Android userspace (armeabi-v7a compatible).' \\
-            'Includes the pinned VirtualAP engine, hostapd, and dnsmasq ARMv7 payload.' \\
-            'Device-specific hotspot compatibility must be validated on the target phone.' \\
-            > "$STAGE/INSTALL-NOTES.txt"
+          cat > "$STAGE/INSTALL-NOTES.txt" <<'EOF'
+ENets ARM32 ARMv7 integration preview
+Built for 32-bit ARMv7 Android userspace (armeabi-v7a compatible).
+Includes the pinned VirtualAP engine, hostapd, and dnsmasq ARMv7 payload.
+Device-specific hotspot compatibility must be validated on the target phone.
+EOF
 
           chmod 0755 "$STAGE/service.sh" "$STAGE/uninstall.sh" "$STAGE/customize.sh"
           chmod 0755 "$STAGE/payload/bin/virtualap" "$STAGE/payload/bin/hostapd" "$STAGE/payload/bin/dnsmasq"
