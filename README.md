@@ -2,7 +2,7 @@
 
 ENets is an open-source Magisk module project for managing an Android Wi-Fi hotspot through a lightweight local web dashboard.
 
-> **Status: early development (v0.1.0-alpha).** An installable ARM64 read-only preview package is being built by GitHub Actions. The preview does not change Android hotspot settings and is not the completed hotspot manager.
+> **Status: early development (v0.1.0-alpha).** An installable ARM64 VirtualAP-backed ARM64 integration preview package is being built by GitHub Actions. The preview does not change Android hotspot settings and is not the completed hotspot manager.
 
 ## Planned features
 
