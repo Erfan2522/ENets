@@ -69,15 +69,15 @@ jobs:
           lines = ap.read_text().splitlines(keepends=True)
           matches = [i for i, line in enumerate(lines) if 'fputs("country_code=US' in line]
           assert len(matches) == 1, "Expected exactly one hardcoded regulatory-domain line"
-          lines[matches[0]] = '  /* Keep the device/kernel regulatory domain; do not force a country. */\\n'
+          lines[matches[0]] = '  /* Keep the device/kernel regulatory domain; do not force a country. */\n'
           ap.write_text("".join(lines))
 
           test = root / "tests/check_services.c"
           lines = test.read_text().splitlines(keepends=True)
           matches = [i for i, line in enumerate(lines) if 'country_code=US' in line]
           assert len(matches) == 1, "Expected exactly one country-code assertion"
-          lines[matches[0]] = '  CHECK(strstr(c, "ht_capab=[HT40-]\\\\nvht_oper_chwidth=0\\\\n") &&\\n'
-          lines.insert(matches[0] + 1, '        !strstr(c, "country_code=") && !strstr(c, "ieee80211d="));\\n')
+          lines[matches[0]] = '  CHECK(strstr(c, "ht_capab=[HT40-]\\nvht_oper_chwidth=0\\n") &&\n'
+          lines.insert(matches[0] + 1, '        !strstr(c, "country_code=") && !strstr(c, "ieee80211d="));\n')
           test.write_text("".join(lines))
           PY
 
