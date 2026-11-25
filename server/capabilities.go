@@ -59,7 +59,7 @@ func property(name string) string {
 }
 
 func containsHelpCommand(help, command string) bool {
-	pattern := regexp.MustCompile(`(?m)(^|\\s)` + regexp.QuoteMeta(command) + `(\\s|$)`)
+	pattern := regexp.MustCompile(`(?m)(^|\s)` + regexp.QuoteMeta(command) + `(\s|$)`)
 	return pattern.MatchString(strings.ToLower(help))
 }
 
