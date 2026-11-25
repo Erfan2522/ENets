@@ -34,6 +34,7 @@ install_backend_payload() {
   done
 
   mkdir -p "$ENETS_DATA/bin" "$ENETS_DATA/logs" "$ENETS_DATA/run" || return 1
+  chmod 0700 "$ENETS_DATA" "$ENETS_DATA/logs" "$ENETS_DATA/run" || return 1
   for name in virtualap hostapd dnsmasq; do
     cp -f "$PAYLOAD_DIR/$name" "$ENETS_DATA/bin/$name" || return 1
     chmod 0755 "$ENETS_DATA/bin/$name" || return 1
