@@ -42,7 +42,7 @@ func main() {
 		Handler:           securityHeaders(localHostOnly(mux)),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
-		WriteTimeout:      90 * time.Second,
+		WriteTimeout:      150 * time.Second,
 		IdleTimeout:       60 * time.Second,
 		MaxHeaderBytes:    1 << 20,
 	}
