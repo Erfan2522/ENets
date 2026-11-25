@@ -234,13 +234,38 @@ func quoteVirtualAPConfig(value string) string {
 	return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'"
 }
 
-func writeVirtualAPConfig(values map[string]string) error {
+func writeVirtualAPConfigBytes(data []byte) error {
 	if os.Geteuid() != 0 {
 		return errors.New("ENets service is not running as root")
 	}
 	if err := os.MkdirAll(filepath.Dir(virtualAPConfig), 0700); err != nil {
 		return err
 	}
+	tmp, err := os.CreateTemp(filepath.Dir(virtualAPConfig), ".ap.conf-*")
+	if err != nil {
+		return err
+	}
+	tmpName := tmp.Name()
+	defer os.Remove(tmpName)
+	if err := tmp.Chmod(0600); err != nil {
+		tmp.Close()
+		return err
+	}
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Sync(); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmpName, virtualAPConfig)
+}
+
+func writeVirtualAPConfig(values map[string]string) error {
 	keys := []string{"PHY_IFACE", "UPSTREAM", "SSID", "PASSWORD", "BAND", "CHANNEL", "WIDTH", "IP_GW", "DNS_SERVERS", "HIDDEN", "SECURITY", "PMF", "TTL_FIX", "IPV6"}
 	var builder strings.Builder
 	for _, key := range keys {
@@ -253,28 +278,7 @@ func writeVirtualAPConfig(values map[string]string) error {
 		builder.WriteString(quoteVirtualAPConfig(value))
 		builder.WriteByte('\n')
 	}
-	tmp, err := os.CreateTemp(filepath.Dir(virtualAPConfig), ".ap.conf-*")
-	if err != nil {
-		return err
-	}
-	tmpName := tmp.Name()
-	defer os.Remove(tmpName)
-	if err := tmp.Chmod(0600); err != nil {
-		tmp.Close()
-		return err
-	}
-	if _, err := tmp.WriteString(builder.String()); err != nil {
-		tmp.Close()
-		return err
-	}
-	if err := tmp.Sync(); err != nil {
-		tmp.Close()
-		return err
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	return os.Rename(tmpName, virtualAPConfig)
+	return writeVirtualAPConfigBytes([]byte(builder.String()))
 }
 
 func sameOriginRequest(r *http.Request) bool {
@@ -357,12 +361,29 @@ func hotspotStartHandler(w http.ResponseWriter, r *http.Request) {
 
 	hotspotOperationMu.Lock()
 	defer hotspotOperationMu.Unlock()
+
+	previousStatus, statusErr := readHotspotStatus()
+	previousConfig, configErr := os.ReadFile(virtualAPConfig)
+	hadPreviousConfig := configErr == nil
+	if configErr != nil && !errors.Is(configErr, os.ErrNotExist) {
+		http.Error(w, "could not read existing hotspot configuration", http.StatusInternalServerError)
+		return
+	}
 	if err := writeVirtualAPConfig(values); err != nil {
 		http.Error(w, "could not save hotspot settings", http.StatusInternalServerError)
 		return
 	}
 	if _, err := runVirtualAP(60*time.Second, "start"); err != nil {
-		http.Error(w, "hotspot could not be started; check the ENets backend log", http.StatusBadGateway)
+		restored := false
+		if hadPreviousConfig {
+			restored = writeVirtualAPConfigBytes(previousConfig) == nil
+		} else {
+			restored = os.Remove(virtualAPConfig) == nil || errors.Is(os.ErrNotExist, os.ErrNotExist)
+		}
+		if restored && statusErr == nil && previousStatus.Running && hadPreviousConfig {
+			_, _ = runVirtualAP(60*time.Second, "start")
+		}
+		http.Error(w, "hotspot could not be started; previous settings were restored when possible", http.StatusBadGateway)
 		return
 	}
 	status, err := readHotspotStatus()
